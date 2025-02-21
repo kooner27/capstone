@@ -7,6 +7,7 @@ import bcrypt
 import jwt
 import datetime
 from functools import wraps
+from bson import ObjectId 
 
 # Load environment variables from .env file
 load_dotenv()
@@ -86,7 +87,6 @@ def get_user():
 # --- Notebooks Endpoints ---
 @app.route("/api/notebooks", methods=["GET"])
 def get_notebooks():
-    # For testing, we assume a dummy user_id "test"
     notebooks = list(notebooks_collection.find({}))
     for nb in notebooks:
         nb["_id"] = str(nb["_id"])
@@ -112,14 +112,16 @@ def update_notebook(notebook_id):
         "name": data.get("name"),
         "updated_at": datetime.datetime.utcnow()
     }
-    result = notebooks_collection.update_one({"_id": notebook_id}, {"$set": updated})
+    # Convert notebook_id to ObjectId
+    result = notebooks_collection.update_one({"_id": ObjectId(notebook_id)}, {"$set": updated})
     if result.matched_count == 0:
         return jsonify({"message": "Notebook not found"}), 404
     return jsonify({"message": "Notebook updated successfully"}), 200
 
 @app.route("/api/notebooks/<notebook_id>", methods=["DELETE"])
 def delete_notebook(notebook_id):
-    notebooks_collection.delete_one({"_id": notebook_id})
+    # Convert notebook_id to ObjectId
+    notebooks_collection.delete_one({"_id": ObjectId(notebook_id)})
     # Delete associated sections and notes
     sections = list(sections_collection.find({"notebook_id": notebook_id}))
     for sec in sections:
@@ -157,14 +159,17 @@ def update_section(notebook_id, section_id):
         "title": data.get("title"),
         "updated_at": datetime.datetime.utcnow()
     }
-    result = sections_collection.update_one({"_id": section_id, "notebook_id": notebook_id}, {"$set": updated})
+    result = sections_collection.update_one(
+        {"_id": ObjectId(section_id), "notebook_id": notebook_id},
+        {"$set": updated}
+    )
     if result.matched_count == 0:
         return jsonify({"message": "Section not found"}), 404
     return jsonify({"message": "Section updated successfully"}), 200
 
 @app.route("/api/notebooks/<notebook_id>/sections/<section_id>", methods=["DELETE"])
 def delete_section(notebook_id, section_id):
-    sections_collection.delete_one({"_id": section_id, "notebook_id": notebook_id})
+    sections_collection.delete_one({"_id": ObjectId(section_id), "notebook_id": notebook_id})
     notes_collection.delete_many({"section_id": section_id})
     return jsonify({"message": "Section and its notes deleted"}), 200
 
@@ -202,14 +207,17 @@ def update_note(notebook_id, section_id, note_id):
         "labels": data.get("labels", []),
         "updated_at": datetime.datetime.utcnow()
     }
-    result = notes_collection.update_one({"_id": note_id, "section_id": section_id}, {"$set": updated})
+    result = notes_collection.update_one(
+        {"_id": ObjectId(note_id), "section_id": section_id},
+        {"$set": updated}
+    )
     if result.matched_count == 0:
         return jsonify({"message": "Note not found"}), 404
     return jsonify({"message": "Note updated successfully"}), 200
 
 @app.route("/api/notebooks/<notebook_id>/sections/<section_id>/notes/<note_id>", methods=["DELETE"])
 def delete_note(notebook_id, section_id, note_id):
-    result = notes_collection.delete_one({"_id": note_id, "section_id": section_id})
+    result = notes_collection.delete_one({"_id": ObjectId(note_id), "section_id": section_id})
     if result.deleted_count == 0:
         return jsonify({"message": "Note not found"}), 404
     return jsonify({"message": "Note deleted successfully"}), 200
