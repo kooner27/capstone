@@ -13,12 +13,10 @@ from bson import ObjectId
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow requests from any origin
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Flask configuration
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "your_secret_key")
-
-# MongoDB configuration
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/note_app")
 client = MongoClient(MONGO_URI)
 db = client["note_app"]
@@ -69,7 +67,6 @@ def login():
     user = users_collection.find_one({"username": username})
     if not user or not bcrypt.checkpw(password.encode("utf-8"), user["password"]):
         return jsonify({"message": "Invalid credentials"}), 401
-    # Return a token anyway (for future use) even though the frontend handles auth state
     token = jwt.encode({
         "user_id": str(user["_id"]),
         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=24)
@@ -78,25 +75,24 @@ def login():
 
 @app.route("/api/user", methods=["GET"])
 def get_user():
-    # For now, simply return a dummy message (frontend should manage logged-in state)
     return jsonify({"message": "User endpoint (authentication handled on the frontend)"}), 200
 
 # ------------------------------------------------------------------------------
-# Hierarchical Endpoints: Notebooks → Sections → Notes
+# User-Specific Endpoints: Notebooks → Sections → Notes
 # ------------------------------------------------------------------------------
 # --- Notebooks Endpoints ---
-@app.route("/api/notebooks", methods=["GET"])
-def get_notebooks():
-    notebooks = list(notebooks_collection.find({}))
+@app.route("/api/users/<user_id>/notebooks", methods=["GET"])
+def get_user_notebooks(user_id):
+    notebooks = list(notebooks_collection.find({"user_id": user_id}))
     for nb in notebooks:
         nb["_id"] = str(nb["_id"])
     return jsonify({"notebooks": notebooks}), 200
 
-@app.route("/api/notebooks", methods=["POST"])
-def create_notebook():
+@app.route("/api/users/<user_id>/notebooks", methods=["POST"])
+def create_notebook(user_id):
     data = request.get_json()
     notebook = {
-        "user_id": "test",  # dummy user id for testing
+        "user_id": user_id,
         "name": data.get("name", "Untitled Notebook"),
         "created_at": datetime.datetime.utcnow(),
         "updated_at": datetime.datetime.utcnow()
@@ -105,44 +101,47 @@ def create_notebook():
     notebook["_id"] = str(result.inserted_id)
     return jsonify({"notebook": notebook}), 201
 
-@app.route("/api/notebooks/<notebook_id>", methods=["PUT"])
-def update_notebook(notebook_id):
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>", methods=["PUT"])
+def update_notebook(user_id, notebook_id):
     data = request.get_json()
     updated = {
         "name": data.get("name"),
         "updated_at": datetime.datetime.utcnow()
     }
-    # Convert notebook_id to ObjectId
-    result = notebooks_collection.update_one({"_id": ObjectId(notebook_id)}, {"$set": updated})
+    result = notebooks_collection.update_one(
+        {"_id": ObjectId(notebook_id), "user_id": user_id},
+        {"$set": updated}
+    )
     if result.matched_count == 0:
         return jsonify({"message": "Notebook not found"}), 404
     return jsonify({"message": "Notebook updated successfully"}), 200
 
-@app.route("/api/notebooks/<notebook_id>", methods=["DELETE"])
-def delete_notebook(notebook_id):
-    # Convert notebook_id to ObjectId
-    notebooks_collection.delete_one({"_id": ObjectId(notebook_id)})
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>", methods=["DELETE"])
+def delete_notebook(user_id, notebook_id):
+    result = notebooks_collection.delete_one({"_id": ObjectId(notebook_id), "user_id": user_id})
+    if result.deleted_count == 0:
+        return jsonify({"message": "Notebook not found"}), 404
     # Delete associated sections and notes
-    sections = list(sections_collection.find({"notebook_id": notebook_id}))
+    sections = list(sections_collection.find({"notebook_id": notebook_id, "user_id": user_id}))
     for sec in sections:
         sec_id = str(sec["_id"])
-        notes_collection.delete_many({"section_id": sec_id})
-    sections_collection.delete_many({"notebook_id": notebook_id})
+        notes_collection.delete_many({"section_id": sec_id, "user_id": user_id})
+    sections_collection.delete_many({"notebook_id": notebook_id, "user_id": user_id})
     return jsonify({"message": "Notebook and its sections/notes deleted"}), 200
 
-# --- Sections Endpoints (nested in a Notebook) ---
-@app.route("/api/notebooks/<notebook_id>/sections", methods=["GET"])
-def get_sections(notebook_id):
-    sections = list(sections_collection.find({"notebook_id": notebook_id}))
+# --- Sections Endpoints ---
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections", methods=["GET"])
+def get_sections(user_id, notebook_id):
+    sections = list(sections_collection.find({"notebook_id": notebook_id, "user_id": user_id}))
     for sec in sections:
         sec["_id"] = str(sec["_id"])
     return jsonify({"sections": sections}), 200
 
-@app.route("/api/notebooks/<notebook_id>/sections", methods=["POST"])
-def create_section(notebook_id):
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections", methods=["POST"])
+def create_section(user_id, notebook_id):
     data = request.get_json()
     section = {
-        "user_id": "test",  # dummy user id for testing
+        "user_id": user_id,
         "notebook_id": notebook_id,
         "title": data.get("title", "New Section"),
         "created_at": datetime.datetime.utcnow(),
@@ -152,40 +151,44 @@ def create_section(notebook_id):
     section["_id"] = str(result.inserted_id)
     return jsonify({"section": section}), 201
 
-@app.route("/api/notebooks/<notebook_id>/sections/<section_id>", methods=["PUT"])
-def update_section(notebook_id, section_id):
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>", methods=["PUT"])
+def update_section(user_id, notebook_id, section_id):
     data = request.get_json()
     updated = {
         "title": data.get("title"),
         "updated_at": datetime.datetime.utcnow()
     }
     result = sections_collection.update_one(
-        {"_id": ObjectId(section_id), "notebook_id": notebook_id},
+        {"_id": ObjectId(section_id), "notebook_id": notebook_id, "user_id": user_id},
         {"$set": updated}
     )
     if result.matched_count == 0:
         return jsonify({"message": "Section not found"}), 404
     return jsonify({"message": "Section updated successfully"}), 200
 
-@app.route("/api/notebooks/<notebook_id>/sections/<section_id>", methods=["DELETE"])
-def delete_section(notebook_id, section_id):
-    sections_collection.delete_one({"_id": ObjectId(section_id), "notebook_id": notebook_id})
-    notes_collection.delete_many({"section_id": section_id})
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>", methods=["DELETE"])
+def delete_section(user_id, notebook_id, section_id):
+    result = sections_collection.delete_one(
+        {"_id": ObjectId(section_id), "notebook_id": notebook_id, "user_id": user_id}
+    )
+    if result.deleted_count == 0:
+        return jsonify({"message": "Section not found"}), 404
+    notes_collection.delete_many({"section_id": section_id, "user_id": user_id})
     return jsonify({"message": "Section and its notes deleted"}), 200
 
-# --- Notes Endpoints (nested in a Section and Notebook) ---
-@app.route("/api/notebooks/<notebook_id>/sections/<section_id>/notes", methods=["GET"])
-def get_notes(notebook_id, section_id):
-    notes = list(notes_collection.find({"section_id": section_id}))
+# --- Notes Endpoints ---
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>/notes", methods=["GET"])
+def get_notes(user_id, notebook_id, section_id):
+    notes = list(notes_collection.find({"section_id": section_id, "user_id": user_id}))
     for note in notes:
         note["_id"] = str(note["_id"])
     return jsonify({"notes": notes}), 200
 
-@app.route("/api/notebooks/<notebook_id>/sections/<section_id>/notes", methods=["POST"])
-def create_note(notebook_id, section_id):
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>/notes", methods=["POST"])
+def create_note(user_id, notebook_id, section_id):
     data = request.get_json()
     note = {
-        "user_id": "test",  # dummy user id for testing
+        "user_id": user_id,
         "notebook_id": notebook_id,
         "section_id": section_id,
         "title": data.get("title", "New Note"),
@@ -198,8 +201,8 @@ def create_note(notebook_id, section_id):
     note["_id"] = str(result.inserted_id)
     return jsonify({"note": note}), 201
 
-@app.route("/api/notebooks/<notebook_id>/sections/<section_id>/notes/<note_id>", methods=["PUT"])
-def update_note(notebook_id, section_id, note_id):
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>/notes/<note_id>", methods=["PUT"])
+def update_note(user_id, notebook_id, section_id, note_id):
     data = request.get_json()
     updated = {
         "title": data.get("title"),
@@ -208,16 +211,18 @@ def update_note(notebook_id, section_id, note_id):
         "updated_at": datetime.datetime.utcnow()
     }
     result = notes_collection.update_one(
-        {"_id": ObjectId(note_id), "section_id": section_id},
+        {"_id": ObjectId(note_id), "section_id": section_id, "user_id": user_id},
         {"$set": updated}
     )
     if result.matched_count == 0:
         return jsonify({"message": "Note not found"}), 404
     return jsonify({"message": "Note updated successfully"}), 200
 
-@app.route("/api/notebooks/<notebook_id>/sections/<section_id>/notes/<note_id>", methods=["DELETE"])
-def delete_note(notebook_id, section_id, note_id):
-    result = notes_collection.delete_one({"_id": ObjectId(note_id), "section_id": section_id})
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>/notes/<note_id>", methods=["DELETE"])
+def delete_note(user_id, notebook_id, section_id, note_id):
+    result = notes_collection.delete_one(
+        {"_id": ObjectId(note_id), "section_id": section_id, "user_id": user_id}
+    )
     if result.deleted_count == 0:
         return jsonify({"message": "Note not found"}), 404
     return jsonify({"message": "Note deleted successfully"}), 200
