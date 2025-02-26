@@ -21,6 +21,7 @@ import ForgotPassword from './components/ForgotPassword'
 import AppTheme from '../shared-theme/AppTheme'
 import ColorModeSelect from '../shared-theme/ColorModeSelect'
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons'
+const API_URL = import.meta.env.VITE_API_URL
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -64,8 +65,10 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 
 export default function SignIn(props) {
   const navigate = useNavigate()
-  const [emailError, setEmailError] = React.useState(false)
-  const [emailErrorMessage, setEmailErrorMessage] = React.useState('')
+  // const [emailError, setEmailError] = React.useState(false)
+  // const [emailErrorMessage, setEmailErrorMessage] = React.useState('')
+  const [nameError, setNameError] = React.useState(false)
+  const [nameErrorMessage, setNameErrorMessage] = React.useState('')
   const [passwordError, setPasswordError] = React.useState(false)
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('')
   const [open, setOpen] = React.useState(false)
@@ -78,33 +81,76 @@ export default function SignIn(props) {
     setOpen(false)
   }
 
-  const handleSubmit = (event) => {
-    // if (emailError || passwordError) {
-    //   event.preventDefault()
-    //   return
-    // }
-    // const data = new FormData(event.currentTarget)
-    // console.log({
-    //   email: data.get('email'),
-    //   password: data.get('password')
-    // })
+  // const handleSubmit = (event) => {
+  //   if (emailError || passwordError) {
+  //     event.preventDefault()
+  //     return
+  //   }
+  //   const data = new FormData(event.currentTarget)
+  //   console.log({
+  //     email: data.get('email'),
+  //     password: data.get('password')
+  //   })
 
-    navigate('/dashboard')
+  //   navigate('/dashboard')
+  // }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!validateInputs()) return
+
+    const data = new FormData(event.currentTarget)
+    const user = {
+      username: data.get('name'),
+      password: data.get('password')
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user)
+      })
+
+      const responseData = await response.json()
+
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Login failed')
+      }
+
+      // Store JWT in localStorage
+      localStorage.setItem('token', responseData.token)
+      alert('Login successful! Redirecting to dashboard...')
+      navigate('/dashboard')
+    } catch (error) {
+      alert(`Error: ${error.message}`)
+    }
   }
 
   const validateInputs = () => {
-    const email = document.getElementById('email')
+    // const email = document.getElementById('email')
     const password = document.getElementById('password')
+    const name = document.getElementById('name')
 
     let isValid = true
 
-    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
-      setEmailError(true)
-      setEmailErrorMessage('Please enter a valid email address.')
+    // if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
+    //   setEmailError(true)
+    //   setEmailErrorMessage('Please enter a valid email address.')
+    //   isValid = false
+    // } else {
+    //   setEmailError(false)
+    //   setEmailErrorMessage('')
+    // }
+    if (!name.value || name.value.length < 1) {
+      setNameError(true)
+      setNameErrorMessage('Please enter a valid username.')
       isValid = false
     } else {
-      setEmailError(false)
-      setEmailErrorMessage('')
+      setNameError(false)
+      setNameErrorMessage('')
     }
 
     if (!password.value || password.value.length < 6) {
@@ -145,20 +191,17 @@ export default function SignIn(props) {
             }}
           >
             <FormControl>
-              <FormLabel htmlFor="email">Email</FormLabel>
+              <FormLabel htmlFor="name">Username</FormLabel>
               <TextField
-                error={emailError}
-                helperText={emailErrorMessage}
-                id="email"
-                type="email"
-                name="email"
-                placeholder="your@email.com"
-                autoComplete="email"
-                autoFocus
+                autoComplete="name"
+                name="name"
                 required
                 fullWidth
-                variant="outlined"
-                color={emailError ? 'error' : 'primary'}
+                id="name"
+                placeholder="Jon Snow"
+                error={nameError}
+                helperText={nameErrorMessage}
+                color={nameError ? 'error' : 'primary'}
               />
             </FormControl>
             <FormControl>

@@ -77,6 +77,14 @@ def login():
 def get_user():
     return jsonify({"message": "User endpoint (authentication handled on the frontend)"}), 200
 
+@app.route("/api/users", methods=["GET"])
+def get_all_users():
+    users = list(users_collection.find({}, {"password": 0}))  # Exclude password
+    for user in users:
+        user["_id"] = str(user["_id"])  # Convert ObjectId to string
+    return jsonify({"users": users}), 200
+
+
 # ------------------------------------------------------------------------------
 # User-Specific Endpoints: Notebooks → Sections → Notes
 # ------------------------------------------------------------------------------

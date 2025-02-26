@@ -8,7 +8,6 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import FormLabel from '@mui/material/FormLabel'
 import FormControl from '@mui/material/FormControl'
 // modified
-import { Link as RouterLink } from 'react-router-dom'
 import Link from '@mui/material/Link'
 // modified
 import TextField from '@mui/material/TextField'
@@ -19,6 +18,9 @@ import { styled } from '@mui/material/styles'
 import AppTheme from '../shared-theme/AppTheme'
 import ColorModeSelect from '../shared-theme/ColorModeSelect'
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons'
+// modified
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
+const API_URL = import.meta.env.VITE_API_URL
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -61,6 +63,7 @@ const SignUpContainer = styled(Stack)(({ theme }) => ({
 }))
 
 export default function SignUp(props) {
+  const navigate = useNavigate()
   const [emailError, setEmailError] = React.useState(false)
   const [emailErrorMessage, setEmailErrorMessage] = React.useState('')
   const [passwordError, setPasswordError] = React.useState(false)
@@ -95,7 +98,7 @@ export default function SignUp(props) {
 
     if (!name.value || name.value.length < 1) {
       setNameError(true)
-      setNameErrorMessage('Name is required.')
+      setNameErrorMessage('username is required.')
       isValid = false
     } else {
       setNameError(false)
@@ -105,18 +108,51 @@ export default function SignUp(props) {
     return isValid
   }
 
-  const handleSubmit = (event) => {
-    if (nameError || emailError || passwordError) {
-      event.preventDefault()
-      return
-    }
+  // const handleSubmit = (event) => {
+  //   if (nameError || emailError || passwordError) {
+  //     event.preventDefault()
+  //     return
+  //   }
+  //   const data = new FormData(event.currentTarget)
+  //   console.log({
+  //     name: data.get('name'),
+  //     lastName: data.get('lastName'),
+  //     email: data.get('email'),
+  //     password: data.get('password')
+  //   })
+  // }
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!validateInputs()) return
+
     const data = new FormData(event.currentTarget)
-    console.log({
-      name: data.get('name'),
-      lastName: data.get('lastName'),
+    const user = {
+      username: data.get('name'),
       email: data.get('email'),
       password: data.get('password')
-    })
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        // Fixed template literal syntax
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user)
+      })
+
+      const responseData = await response.json()
+
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Signup failed')
+      }
+
+      alert('Signup successful! Redirecting to login...')
+      navigate('/signin')
+    } catch (error) {
+      alert(`Error: ${error.message}`)
+    }
   }
 
   return (
@@ -139,7 +175,7 @@ export default function SignUp(props) {
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
             <FormControl>
-              <FormLabel htmlFor="name">Full name</FormLabel>
+              <FormLabel htmlFor="name">Username</FormLabel>
               <TextField
                 autoComplete="name"
                 name="name"
