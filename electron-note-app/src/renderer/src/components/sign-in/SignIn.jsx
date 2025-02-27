@@ -21,7 +21,8 @@ import ForgotPassword from './components/ForgotPassword'
 import AppTheme from '../shared-theme/AppTheme'
 import ColorModeSelect from '../shared-theme/ColorModeSelect'
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons'
-const API_URL = import.meta.env.VITE_API_URL
+// modified
+import { loginUser } from '../../api/auth'
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -32,7 +33,7 @@ const Card = styled(MuiCard)(({ theme }) => ({
   gap: theme.spacing(2),
   margin: 'auto',
   [theme.breakpoints.up('sm')]: {
-    maxWidth: '450px'
+    width: '500px'
   },
   boxShadow:
     'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
@@ -72,6 +73,7 @@ export default function SignIn(props) {
   const [passwordError, setPasswordError] = React.useState(false)
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('')
   const [open, setOpen] = React.useState(false)
+  const [successMessage, setSuccessMessage] = React.useState('') // for conditionally rendering success message
 
   const handleClickOpen = () => {
     setOpen(true)
@@ -106,24 +108,14 @@ export default function SignIn(props) {
     }
 
     try {
-      const response = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(user)
-      })
-
-      const responseData = await response.json()
-
-      if (!response.ok) {
-        throw new Error(responseData.message || 'Login failed')
-      }
+      const responseData = await loginUser(user)
 
       // Store JWT in localStorage
       localStorage.setItem('token', responseData.token)
-      alert('Login successful! Redirecting to dashboard...')
-      navigate('/dashboard')
+      setSuccessMessage('Login successful! Redirecting...')
+      setTimeout(() => {
+        navigate('/applayout')
+      }, 1000)
     } catch (error) {
       alert(`Error: ${error.message}`)
     }
@@ -221,15 +213,24 @@ export default function SignIn(props) {
                 color={passwordError ? 'error' : 'primary'}
               />
             </FormControl>
-            <FormControlLabel
+            {/* <FormControlLabel
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
             />
-            <ForgotPassword open={open} handleClose={handleClose} />
-            <Button type="submit" fullWidth variant="contained" onClick={validateInputs}>
-              Sign in
-            </Button>
-            <Link
+            <ForgotPassword open={open} handleClose={handleClose} /> */}
+
+            {/* show success message when signing in otherwise show the button */}
+
+            {successMessage ? (
+              <Typography variant="body1" color="success.main">
+                {successMessage}
+              </Typography>
+            ) : (
+              <Button type="submit" fullWidth variant="contained" onClick={validateInputs}>
+                Sign in
+              </Button>
+            )}
+            {/* <Link
               component="button"
               type="button"
               onClick={handleClickOpen}
@@ -237,11 +238,11 @@ export default function SignIn(props) {
               sx={{ alignSelf: 'center' }}
             >
               Forgot your password?
-            </Link>
+            </Link> */}
           </Box>
           <Divider>or</Divider>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Button
+            {/* <Button
               fullWidth
               variant="outlined"
               onClick={() => alert('Sign in with Google')}
@@ -256,7 +257,7 @@ export default function SignIn(props) {
               startIcon={<FacebookIcon />}
             >
               Sign in with Facebook
-            </Button>
+            </Button> */}
             <Typography sx={{ textAlign: 'center' }}>
               Don&apos;t have an account?{' '}
               <Link

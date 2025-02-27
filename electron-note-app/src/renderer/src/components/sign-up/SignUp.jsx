@@ -20,7 +20,7 @@ import ColorModeSelect from '../shared-theme/ColorModeSelect'
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons'
 // modified
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-const API_URL = import.meta.env.VITE_API_URL
+import { registerUser } from '../../api/auth'
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -33,7 +33,7 @@ const Card = styled(MuiCard)(({ theme }) => ({
   boxShadow:
     'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
   [theme.breakpoints.up('sm')]: {
-    width: '450px'
+    width: '500px'
   },
   ...theme.applyStyles('dark', {
     boxShadow:
@@ -70,6 +70,7 @@ export default function SignUp(props) {
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('')
   const [nameError, setNameError] = React.useState(false)
   const [nameErrorMessage, setNameErrorMessage] = React.useState('')
+  const [successMessage, setSuccessMessage] = React.useState('') // for conditionally rendering success message
 
   const validateInputs = () => {
     const email = document.getElementById('email')
@@ -131,25 +132,12 @@ export default function SignUp(props) {
       email: data.get('email'),
       password: data.get('password')
     }
-
     try {
-      const response = await fetch(`${API_URL}/register`, {
-        // Fixed template literal syntax
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(user)
-      })
-
-      const responseData = await response.json()
-
-      if (!response.ok) {
-        throw new Error(responseData.message || 'Signup failed')
-      }
-
-      alert('Signup successful! Redirecting to login...')
-      navigate('/signin')
+      await registerUser(user)
+      setSuccessMessage('Signup successful! Redirecting to login...')
+      setTimeout(() => {
+        navigate('/signin')
+      }, 1000)
     } catch (error) {
       alert(`Error: ${error.message}`)
     }
@@ -219,19 +207,26 @@ export default function SignUp(props) {
                 color={passwordError ? 'error' : 'primary'}
               />
             </FormControl>
-            <FormControlLabel
+            {/* <FormControlLabel
               control={<Checkbox value="allowExtraEmails" color="primary" />}
               label="I want to receive updates via email."
-            />
-            <Button type="submit" fullWidth variant="contained" onClick={validateInputs}>
-              Sign up
-            </Button>
+            /> */}
+            {/* show success message if signing in other wise show the sign up button */}
+            {successMessage ? (
+              <Typography variant="body1" color="success.main">
+                {successMessage}
+              </Typography>
+            ) : (
+              <Button type="submit" fullWidth variant="contained" onClick={validateInputs}>
+                Sign up
+              </Button>
+            )}
           </Box>
           <Divider>
             <Typography sx={{ color: 'text.secondary' }}>or</Typography>
           </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Button
+            {/* <Button
               fullWidth
               variant="outlined"
               onClick={() => alert('Sign up with Google')}
@@ -246,7 +241,7 @@ export default function SignUp(props) {
               startIcon={<FacebookIcon />}
             >
               Sign up with Facebook
-            </Button>
+            </Button> */}
             <Typography sx={{ textAlign: 'center' }}>
               Already have an account?{' '}
               <Link
