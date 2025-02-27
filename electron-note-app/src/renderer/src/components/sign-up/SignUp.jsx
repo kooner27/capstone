@@ -8,7 +8,6 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import FormLabel from '@mui/material/FormLabel'
 import FormControl from '@mui/material/FormControl'
 // modified
-import { Link as RouterLink } from 'react-router-dom'
 import Link from '@mui/material/Link'
 // modified
 import TextField from '@mui/material/TextField'
@@ -19,6 +18,9 @@ import { styled } from '@mui/material/styles'
 import AppTheme from '../shared-theme/AppTheme'
 import ColorModeSelect from '../shared-theme/ColorModeSelect'
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons'
+// modified
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { registerUser } from '../../api/auth'
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -31,7 +33,7 @@ const Card = styled(MuiCard)(({ theme }) => ({
   boxShadow:
     'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
   [theme.breakpoints.up('sm')]: {
-    width: '450px'
+    width: '500px'
   },
   ...theme.applyStyles('dark', {
     boxShadow:
@@ -61,12 +63,14 @@ const SignUpContainer = styled(Stack)(({ theme }) => ({
 }))
 
 export default function SignUp(props) {
+  const navigate = useNavigate()
   const [emailError, setEmailError] = React.useState(false)
   const [emailErrorMessage, setEmailErrorMessage] = React.useState('')
   const [passwordError, setPasswordError] = React.useState(false)
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('')
   const [nameError, setNameError] = React.useState(false)
   const [nameErrorMessage, setNameErrorMessage] = React.useState('')
+  const [successMessage, setSuccessMessage] = React.useState('') // for conditionally rendering success message
 
   const validateInputs = () => {
     const email = document.getElementById('email')
@@ -95,7 +99,7 @@ export default function SignUp(props) {
 
     if (!name.value || name.value.length < 1) {
       setNameError(true)
-      setNameErrorMessage('Name is required.')
+      setNameErrorMessage('username is required.')
       isValid = false
     } else {
       setNameError(false)
@@ -105,18 +109,38 @@ export default function SignUp(props) {
     return isValid
   }
 
-  const handleSubmit = (event) => {
-    if (nameError || emailError || passwordError) {
-      event.preventDefault()
-      return
-    }
+  // const handleSubmit = (event) => {
+  //   if (nameError || emailError || passwordError) {
+  //     event.preventDefault()
+  //     return
+  //   }
+  //   const data = new FormData(event.currentTarget)
+  //   console.log({
+  //     name: data.get('name'),
+  //     lastName: data.get('lastName'),
+  //     email: data.get('email'),
+  //     password: data.get('password')
+  //   })
+  // }
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!validateInputs()) return
+
     const data = new FormData(event.currentTarget)
-    console.log({
-      name: data.get('name'),
-      lastName: data.get('lastName'),
+    const user = {
+      username: data.get('name'),
       email: data.get('email'),
       password: data.get('password')
-    })
+    }
+    try {
+      await registerUser(user)
+      setSuccessMessage('Signup successful! Redirecting to login...')
+      setTimeout(() => {
+        navigate('/signin')
+      }, 1000)
+    } catch (error) {
+      alert(`Error: ${error.message}`)
+    }
   }
 
   return (
@@ -139,7 +163,7 @@ export default function SignUp(props) {
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
             <FormControl>
-              <FormLabel htmlFor="name">Full name</FormLabel>
+              <FormLabel htmlFor="name">Username</FormLabel>
               <TextField
                 autoComplete="name"
                 name="name"
@@ -183,19 +207,26 @@ export default function SignUp(props) {
                 color={passwordError ? 'error' : 'primary'}
               />
             </FormControl>
-            <FormControlLabel
+            {/* <FormControlLabel
               control={<Checkbox value="allowExtraEmails" color="primary" />}
               label="I want to receive updates via email."
-            />
-            <Button type="submit" fullWidth variant="contained" onClick={validateInputs}>
-              Sign up
-            </Button>
+            /> */}
+            {/* show success message if signing in other wise show the sign up button */}
+            {successMessage ? (
+              <Typography variant="body1" color="success.main">
+                {successMessage}
+              </Typography>
+            ) : (
+              <Button type="submit" fullWidth variant="contained" onClick={validateInputs}>
+                Sign up
+              </Button>
+            )}
           </Box>
           <Divider>
             <Typography sx={{ color: 'text.secondary' }}>or</Typography>
           </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Button
+            {/* <Button
               fullWidth
               variant="outlined"
               onClick={() => alert('Sign up with Google')}
@@ -210,7 +241,7 @@ export default function SignUp(props) {
               startIcon={<FacebookIcon />}
             >
               Sign up with Facebook
-            </Button>
+            </Button> */}
             <Typography sx={{ textAlign: 'center' }}>
               Already have an account?{' '}
               <Link

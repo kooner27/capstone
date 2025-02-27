@@ -21,6 +21,8 @@ import ForgotPassword from './components/ForgotPassword'
 import AppTheme from '../shared-theme/AppTheme'
 import ColorModeSelect from '../shared-theme/ColorModeSelect'
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons'
+// modified
+import { loginUser } from '../../api/auth'
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -31,7 +33,7 @@ const Card = styled(MuiCard)(({ theme }) => ({
   gap: theme.spacing(2),
   margin: 'auto',
   [theme.breakpoints.up('sm')]: {
-    maxWidth: '450px'
+    width: '500px'
   },
   boxShadow:
     'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
@@ -64,11 +66,14 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 
 export default function SignIn(props) {
   const navigate = useNavigate()
-  const [emailError, setEmailError] = React.useState(false)
-  const [emailErrorMessage, setEmailErrorMessage] = React.useState('')
+  // const [emailError, setEmailError] = React.useState(false)
+  // const [emailErrorMessage, setEmailErrorMessage] = React.useState('')
+  const [nameError, setNameError] = React.useState(false)
+  const [nameErrorMessage, setNameErrorMessage] = React.useState('')
   const [passwordError, setPasswordError] = React.useState(false)
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('')
   const [open, setOpen] = React.useState(false)
+  const [successMessage, setSuccessMessage] = React.useState('') // for conditionally rendering success message
 
   const handleClickOpen = () => {
     setOpen(true)
@@ -78,33 +83,66 @@ export default function SignIn(props) {
     setOpen(false)
   }
 
-  const handleSubmit = (event) => {
-    // if (emailError || passwordError) {
-    //   event.preventDefault()
-    //   return
-    // }
-    // const data = new FormData(event.currentTarget)
-    // console.log({
-    //   email: data.get('email'),
-    //   password: data.get('password')
-    // })
+  // const handleSubmit = (event) => {
+  //   if (emailError || passwordError) {
+  //     event.preventDefault()
+  //     return
+  //   }
+  //   const data = new FormData(event.currentTarget)
+  //   console.log({
+  //     email: data.get('email'),
+  //     password: data.get('password')
+  //   })
 
-    navigate('/dashboard')
+  //   navigate('/dashboard')
+  // }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!validateInputs()) return
+
+    const data = new FormData(event.currentTarget)
+    const user = {
+      username: data.get('name'),
+      password: data.get('password')
+    }
+
+    try {
+      const responseData = await loginUser(user)
+
+      // Store JWT in localStorage
+      localStorage.setItem('token', responseData.token)
+      setSuccessMessage('Login successful! Redirecting...')
+      setTimeout(() => {
+        navigate('/applayout')
+      }, 1000)
+    } catch (error) {
+      alert(`Error: ${error.message}`)
+    }
   }
 
   const validateInputs = () => {
-    const email = document.getElementById('email')
+    // const email = document.getElementById('email')
     const password = document.getElementById('password')
+    const name = document.getElementById('name')
 
     let isValid = true
 
-    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
-      setEmailError(true)
-      setEmailErrorMessage('Please enter a valid email address.')
+    // if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
+    //   setEmailError(true)
+    //   setEmailErrorMessage('Please enter a valid email address.')
+    //   isValid = false
+    // } else {
+    //   setEmailError(false)
+    //   setEmailErrorMessage('')
+    // }
+    if (!name.value || name.value.length < 1) {
+      setNameError(true)
+      setNameErrorMessage('Please enter a valid username.')
       isValid = false
     } else {
-      setEmailError(false)
-      setEmailErrorMessage('')
+      setNameError(false)
+      setNameErrorMessage('')
     }
 
     if (!password.value || password.value.length < 6) {
@@ -145,20 +183,17 @@ export default function SignIn(props) {
             }}
           >
             <FormControl>
-              <FormLabel htmlFor="email">Email</FormLabel>
+              <FormLabel htmlFor="name">Username</FormLabel>
               <TextField
-                error={emailError}
-                helperText={emailErrorMessage}
-                id="email"
-                type="email"
-                name="email"
-                placeholder="your@email.com"
-                autoComplete="email"
-                autoFocus
+                autoComplete="name"
+                name="name"
                 required
                 fullWidth
-                variant="outlined"
-                color={emailError ? 'error' : 'primary'}
+                id="name"
+                placeholder="Jon Snow"
+                error={nameError}
+                helperText={nameErrorMessage}
+                color={nameError ? 'error' : 'primary'}
               />
             </FormControl>
             <FormControl>
@@ -178,15 +213,24 @@ export default function SignIn(props) {
                 color={passwordError ? 'error' : 'primary'}
               />
             </FormControl>
-            <FormControlLabel
+            {/* <FormControlLabel
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
             />
-            <ForgotPassword open={open} handleClose={handleClose} />
-            <Button type="submit" fullWidth variant="contained" onClick={validateInputs}>
-              Sign in
-            </Button>
-            <Link
+            <ForgotPassword open={open} handleClose={handleClose} /> */}
+
+            {/* show success message when signing in otherwise show the button */}
+
+            {successMessage ? (
+              <Typography variant="body1" color="success.main">
+                {successMessage}
+              </Typography>
+            ) : (
+              <Button type="submit" fullWidth variant="contained" onClick={validateInputs}>
+                Sign in
+              </Button>
+            )}
+            {/* <Link
               component="button"
               type="button"
               onClick={handleClickOpen}
@@ -194,11 +238,11 @@ export default function SignIn(props) {
               sx={{ alignSelf: 'center' }}
             >
               Forgot your password?
-            </Link>
+            </Link> */}
           </Box>
           <Divider>or</Divider>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Button
+            {/* <Button
               fullWidth
               variant="outlined"
               onClick={() => alert('Sign in with Google')}
@@ -213,7 +257,7 @@ export default function SignIn(props) {
               startIcon={<FacebookIcon />}
             >
               Sign in with Facebook
-            </Button>
+            </Button> */}
             <Typography sx={{ textAlign: 'center' }}>
               Don&apos;t have an account?{' '}
               <Link
