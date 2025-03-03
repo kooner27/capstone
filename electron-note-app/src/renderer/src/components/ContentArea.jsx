@@ -66,6 +66,10 @@ const MarkdownRenderer = ({ markdown }) => {
   
   // Format regular text (basic markdown formatting)
   const formatText = (text) => {
+    // Process paragraphs (empty lines create paragraphs)
+    // We'll replace double newlines with paragraph markers to handle them separately
+    text = text.replace(/\n\n+/g, '\n<p-break>\n');
+    
     // Process bold text (**text**)
     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     
@@ -103,7 +107,9 @@ const MarkdownRenderer = ({ markdown }) => {
     }
     text = lines.join('\n');
     
-    return text;
+    // Convert our paragraph markers to actual paragraphs
+    const paragraphs = text.split('<p-break>');
+    return paragraphs.map(p => `<p>${p.trim()}</p>`).join('');
   };
   
   // Run code block handler
@@ -153,12 +159,21 @@ const MarkdownRenderer = ({ markdown }) => {
     );
   };
   
-  // Render text block with markdown formatting
+  // Render text block with markdown formatting and preserving newlines without extra spacing
   const renderTextBlock = (textBlock, index) => {
     const formattedHtml = formatText(textBlock.content);
     
+    // Apply custom CSS to control spacing
+    const customStyles = `
+      p { margin: 0 0 0.5em 0; }
+      p:last-child { margin-bottom: 0; }
+      h1, h2, h3 { margin-top: 0.8em; margin-bottom: 0.5em; }
+      ul { margin-top: 0.3em; margin-bottom: 0.5em; }
+    `;
+    
     return (
       <Box key={`text-${index}`} sx={{ my: 1 }}>
+        <style>{customStyles}</style>
         <div dangerouslySetInnerHTML={{ __html: formattedHtml }} />
       </Box>
     );
