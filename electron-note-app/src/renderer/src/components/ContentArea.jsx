@@ -66,50 +66,54 @@ const MarkdownRenderer = ({ markdown }) => {
   
   // Format regular text (basic markdown formatting)
   const formatText = (text) => {
-    // Process paragraphs (empty lines create paragraphs)
-    // We'll replace double newlines with paragraph markers to handle them separately
-    text = text.replace(/\n\n+/g, '\n<p-break>\n');
+    // First, handle double line breaks as paragraph breaks
+    const paragraphs = text.split(/\n\n+/);
     
-    // Process bold text (**text**)
-    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // Process italic text (*text*)
-    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
-    // Process headers (# Header)
-    text = text.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-    text = text.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
-    text = text.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
-    
-    // Process links ([text](url))
-    text = text.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
-    
-    // Process lists
-    // - First replace list markers with HTML markers
-    text = text.replace(/^- (.*?)$/gm, '<li>$1</li>');
-    // - Then wrap consecutive list items with <ul>
-    const lines = text.split('\n');
-    let inList = false;
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].startsWith('<li>')) {
-        if (!inList) {
-          lines[i] = '<ul>' + lines[i];
-          inList = true;
-        }
-      } else if (inList) {
-        lines[i-1] = lines[i-1] + '</ul>';
-        inList = false;
+    return paragraphs.map(paragraph => {
+      // For each paragraph, handle single line breaks by adding <br> tags
+      let processedText = paragraph.replace(/\n/g, '<br>');
+      
+      // Then handle other markdown formatting within each paragraph
+      
+      // Process bold text (**text**)
+      processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Process italic text (*text*)
+      processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      
+      // Process headers (# Header)
+      processedText = processedText.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+      processedText = processedText.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+      processedText = processedText.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+      
+      // Process links ([text](url))
+      processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
+      
+      // Process lists (simplistic approach for this example)
+      if (processedText.indexOf('<li>') >= 0) {
+        // It's already been processed or contains HTML list items
+        return processedText;
+      } else if (processedText.match(/^- .*?(<br>- .*?)*$/)) {
+        // If the paragraph consists entirely of list items (with possible <br> tags between)
+        // First fix any <br> before list items (they should be removed)
+        processedText = processedText.replace(/<br>- /g, '- ');
+        
+        // Then process list items
+        processedText = processedText.replace(/^- (.*?)$/gm, '<li>$1</li>');
+        
+        // Wrap with <ul> tags
+        return '<ul>' + processedText + '</ul>';
       }
-    }
-    // - Close list if document ends with a list
-    if (inList && lines.length > 0) {
-      lines[lines.length-1] = lines[lines.length-1] + '</ul>';
-    }
-    text = lines.join('\n');
-    
-    // Convert our paragraph markers to actual paragraphs
-    const paragraphs = text.split('<p-break>');
-    return paragraphs.map(p => `<p>${p.trim()}</p>`).join('');
+      
+      // If not a list or header, wrap in paragraph tags
+      if (!processedText.match(/^<h[1-3]>/) && 
+          !processedText.match(/^<ul>/) && 
+          !processedText.trim().startsWith('<li>')) {
+        return '<p>' + processedText + '</p>';
+      }
+      
+      return processedText;
+    }).join('');
   };
   
   // Run code block handler
@@ -159,7 +163,7 @@ const MarkdownRenderer = ({ markdown }) => {
     );
   };
   
-  // Render text block with markdown formatting and preserving newlines without extra spacing
+  // Render text block with markdown formatting and preserving newlines
   const renderTextBlock = (textBlock, index) => {
     const formattedHtml = formatText(textBlock.content);
     
@@ -169,6 +173,7 @@ const MarkdownRenderer = ({ markdown }) => {
       p:last-child { margin-bottom: 0; }
       h1, h2, h3 { margin-top: 0.8em; margin-bottom: 0.5em; }
       ul { margin-top: 0.3em; margin-bottom: 0.5em; }
+      li { margin-bottom: 0.2em; }
     `;
     
     return (
