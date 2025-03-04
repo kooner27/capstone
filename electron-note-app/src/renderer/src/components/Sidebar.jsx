@@ -37,29 +37,37 @@ const Sidebar = () => {
     setSelectedPage
   } = useNotebook()
 
+  // Common list item styles
+  const listItemStyles = {
+    minHeight: 48,
+    '& .MuiListItemText-primary': {
+      fontSize: '0.875rem',
+      lineHeight: 1.25,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  }
+
   if (!selectedNotebook) {
     return (
-      <Box
-        sx={{
-          width: 240,
-          borderRight: 1,
-          borderColor: 'divider',
-          boxSizing: 'border-box'
-        }}
-      >
-        <Typography variant="h6" sx={{ p: 2 }}>
-          Notebooks
-        </Typography>
+      <Box sx={{ width: 240, borderRight: 1, borderColor: 'divider' }}>
+        <Toolbar sx={{ minHeight: 56, px: 2 }}>
+          <Typography variant="h6">Notebooks</Typography>
+        </Toolbar>
         <Divider />
-        <List>
+        <List dense>
           {notebooksData.map((notebook) => (
-            <ListItem 
-              button 
-              key={notebook.name} 
+            <ListItem
+              button
+              key={notebook.name}
               onClick={() => setSelectedNotebook(notebook)}
-              sx={{ minHeight: 48 }}
+              sx={listItemStyles}
             >
-              <ListItemText primary={notebook.name} />
+              <ListItemText 
+                primary={notebook.name}
+                primaryTypographyProps={{ noWrap: true }}
+              />
             </ListItem>
           ))}
         </List>
@@ -68,21 +76,15 @@ const Sidebar = () => {
   }
 
   return (
-    <Box sx={{ width: 480, display: 'flex', boxSizing: 'border-box' }}>
-      <Box
-        sx={{
-          width: 240,
-          borderRight: 1,
-          borderColor: 'divider',
-          boxSizing: 'border-box'
-        }}
-      >
-        <Toolbar sx={{ px: 2, minHeight: 56 }}>
+    <Box sx={{ width: 480, display: 'flex' }}>
+      {/* Sections Column */}
+      <Box sx={{ width: 240, borderRight: 1, borderColor: 'divider' }}>
+        <Toolbar sx={{ minHeight: 56, px: 2, gap: 1 }}>
           <Button
             onClick={() => setSelectedNotebook(null)}
             variant="outlined"
             size="small"
-            sx={{ mr: 2 }}
+            sx={{ flexShrink: 0 }}
           >
             Back
           </Button>
@@ -91,54 +93,50 @@ const Sidebar = () => {
           </Typography>
         </Toolbar>
         <Divider />
-        <List>
+        <List dense>
           {selectedNotebook.sections.map((section) => (
             <ListItem
               button
               key={section}
               selected={selectedSection === section}
-              sx={{ minHeight: 48 }}
               onClick={() => {
                 setSelectedSection(section)
                 setSelectedPage(null)
               }}
+              sx={listItemStyles}
             >
-              <ListItemText primary={section} />
+              <ListItemText 
+                primary={section}
+                primaryTypographyProps={{ noWrap: true }}
+              />
             </ListItem>
           ))}
         </List>
       </Box>
 
-      <Box sx={{ width: 240, boxSizing: 'border-box' }}>
-        {selectedSection ? (
-          <>
-            <Toolbar sx={{ px: 2, minHeight: 56 }}>
-              <Typography variant="h6" noWrap>
-                Pages in {selectedSection}
-              </Typography>
-            </Toolbar>
-            <Divider />
-            <List>
-              {(dummyPages[selectedSection] || []).map((page) => (
-                <ListItem 
-                  button 
-                  key={page} 
-                  onClick={() => setSelectedPage(page)}
-                  sx={{ minHeight: 48 }}
-                >
-                  <ListItemText primary={page} />
-                </ListItem>
-              ))}
-            </List>
-          </>
-        ) : (
-          <>
-            <Toolbar sx={{ px: 2, minHeight: 56 }}>
-              <Typography variant="body1">Select a section to view pages</Typography>
-            </Toolbar>
-            <Divider />
-          </>
-        )}
+      {/* Pages Column */}
+      <Box sx={{ width: 240 }}>
+        <Toolbar sx={{ minHeight: 56, px: 2 }}>
+          <Typography variant="h6" noWrap>
+            {selectedSection ? `Pages in ${selectedSection}` : 'Select a section'}
+          </Typography>
+        </Toolbar>
+        <Divider />
+        <List dense>
+          {(selectedSection ? dummyPages[selectedSection] : []).map((page) => (
+            <ListItem
+              button
+              key={page}
+              onClick={() => setSelectedPage(page)}
+              sx={listItemStyles}
+            >
+              <ListItemText 
+                primary={page}
+                primaryTypographyProps={{ noWrap: true }}
+              />
+            </ListItem>
+          ))}
+        </List>
       </Box>
     </Box>
   )
