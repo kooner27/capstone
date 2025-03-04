@@ -17,13 +17,18 @@ const Navbar = ({ toggleSidebar }) => {
   const handleEditClick = () => {
     if (isEditMode) {
       setShowSaveMessage(true)
+      toggleEditMode(true)
+    } else {
+      toggleEditMode()
     }
-    toggleEditMode()
+  }
+
+  const handleCancelClick = () => {
+    cancelEdit()
   }
 
   const handleViewClick = () => {
     if (isEditMode) {
-      // If in edit mode, cancel editing and switch to view
       cancelEdit()
     }
   }
@@ -42,40 +47,72 @@ const Navbar = ({ toggleSidebar }) => {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             TwoNote
           </Typography>
-          <Button 
-            color="inherit" 
-            onClick={handleEditClick}
-            disabled={!selectedPage}
-            variant={isEditMode ? "contained" : "text"}
-            sx={{ 
-              bgcolor: isEditMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-              '&:hover': {
-                bgcolor: isEditMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
-              }
-            }}
-          >
-            {isEditMode ? "Save" : "Edit"}
-          </Button>
-          <Button 
-            color="inherit"
-            onClick={handleViewClick}
-            disabled={!selectedPage}
-            variant={!isEditMode ? "contained" : "text"}
-            sx={{ 
-              bgcolor: !isEditMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-              '&:hover': {
-                bgcolor: !isEditMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
-              }
-            }}
-          >
-            View
-          </Button>
-          <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button 
+              color="inherit"
+              onClick={handleCancelClick}
+              variant="text"
+              sx={{ 
+                bgcolor: 'transparent',
+                visibility: isEditMode ? 'visible' : 'hidden',
+                width: 80,
+                minWidth: 80,
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.08)'
+                }
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              color="inherit" 
+              onClick={handleEditClick}
+              disabled={!selectedPage}
+              variant={isEditMode ? "contained" : "text"}
+              sx={{ 
+                width: 80,
+                minWidth: 80,
+                bgcolor: isEditMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                '&:hover': {
+                  bgcolor: isEditMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
+                }
+              }}
+            >
+              {isEditMode ? "Save" : "Edit"}
+            </Button>
+            <Button 
+              color="inherit"
+              onClick={handleViewClick}
+              disabled={!selectedPage}
+              variant={!isEditMode ? "contained" : "text"}
+              sx={{ 
+                width: 80,
+                minWidth: 80,
+                bgcolor: !isEditMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                '&:hover': {
+                  bgcolor: !isEditMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
+                }
+              }}
+            >
+              View
+            </Button>
+          </Box>
+          <Box sx={{ 
+            flexGrow: 1, 
+            display: 'flex', 
+            justifyContent: 'center',
+            width: 300,
+            mx: 2
+          }}>
             <TextField
               variant="outlined"
               placeholder="Search..."
               size="small"
-              sx={{ backgroundColor: 'white', borderRadius: 1 }}
+              sx={{ 
+                backgroundColor: 'white', 
+                borderRadius: 1,
+                width: 240
+              }}
             />
           </Box>
           <Button color="inherit" onClick={handleLogout}>Logout</Button>

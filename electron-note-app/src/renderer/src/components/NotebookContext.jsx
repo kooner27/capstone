@@ -24,6 +24,7 @@ export const NotebookProvider = ({ children }) => {
   const [pageContent, setPageContent] = useState(loadSavedContent)
   const [isDirty, setIsDirty] = useState(false)
   const [lastSavedContent, setLastSavedContent] = useState('')
+  const [editCanceled, setEditCanceled] = useState(false)
 
   useEffect(() => {
     try {
@@ -33,25 +34,37 @@ export const NotebookProvider = ({ children }) => {
     }
   }, [pageContent])
 
-  const toggleEditMode = () => {
-    // If currently in edit mode, we're saving
-    if (isEditMode) {
+  const toggleEditMode = (save = false) => {
+    console.log('toggleEditMode called with save:', save)
+    if (isEditMode && save) {
+      console.log('Saving changes')
       setIsDirty(false)
-    } else {
-      // When entering edit mode, store the current content for potential cancel
+    } else if (!isEditMode) {
+      console.log('Entering edit mode, storing current content')
       setLastSavedContent(pageContent[selectedPage] || '')
+    } else {
+      console.log('Exiting edit mode without saving, reverting to last saved content')
+      cancelEdit()
     }
     
     setIsEditMode(!isEditMode)
   }
 
   const cancelEdit = () => {
-    // Revert to the last saved content
+    console.log('cancelEdit called, reverting to last saved content')
     setIsEditMode(false)
     setIsDirty(false)
+    setEditCanceled(true)
+    if (selectedPage) {
+      setPageContent(prevContent => ({
+        ...prevContent,
+        [selectedPage]: lastSavedContent
+      }))
+    }
   }
 
   const updatePageContent = (content) => {
+    console.log('updatePageContent called with content:', content)
     if (selectedPage && content !== undefined) {
       setPageContent(prevContent => {
         const updatedContent = {
@@ -65,6 +78,7 @@ export const NotebookProvider = ({ children }) => {
   }
 
   const getPageContent = (pageName) => {
+    console.log('getPageContent called with pageName:', pageName)
     return pageContent[pageName] || ''
   }
 
@@ -85,7 +99,9 @@ export const NotebookProvider = ({ children }) => {
         updatePageContent,
         getPageContent,
         isDirty,
-        setIsDirty
+        setIsDirty,
+        editCanceled,
+        setEditCanceled
       }}
     >
       {children}

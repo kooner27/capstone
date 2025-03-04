@@ -2,127 +2,90 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Box, Typography, Button } from '@mui/material'
 import { useNotebook } from './NotebookContext'
 
-// Custom markdown renderer component
 const MarkdownRenderer = ({ markdown }) => {
-  // Parse the markdown into sections (text or code blocks)
   const parseMarkdown = (text) => {
-    const sections = [];
-    let currentText = '';
-    let inCodeBlock = false;
-    let codeLanguage = '';
-    let codeContent = '';
+    const sections = []
+    let currentText = ''
+    let inCodeBlock = false
+    let codeLanguage = ''
+    let codeContent = ''
     
-    // Split by lines to process code blocks
-    const lines = text.split('\n');
+    const lines = text.split('\n')
     
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+      const line = lines[i]
       
-      // Check for code block markers ```
       if (line.startsWith('```')) {
         if (!inCodeBlock) {
-          // Starting a code block - save previous text
           if (currentText) {
-            sections.push({ type: 'text', content: currentText });
-            currentText = '';
+            sections.push({ type: 'text', content: currentText })
+            currentText = ''
           }
           
-          // Get language (if specified)
-          codeLanguage = line.slice(3).trim();
-          codeContent = '';
-          inCodeBlock = true;
+          codeLanguage = line.slice(3).trim()
+          codeContent = ''
+          inCodeBlock = true
         } else {
-          // Ending a code block
           sections.push({ 
             type: 'code', 
             language: codeLanguage, 
             content: codeContent 
-          });
-          codeLanguage = '';
-          codeContent = '';
-          inCodeBlock = false;
+          })
+          codeLanguage = ''
+          codeContent = ''
+          inCodeBlock = false
         }
       } else if (inCodeBlock) {
-        // Add line to code content
-        codeContent += (codeContent ? '\n' : '') + line;
+        codeContent += (codeContent ? '\n' : '') + line
       } else {
-        // Add line to text content
-        currentText += (currentText ? '\n' : '') + line;
+        currentText += (currentText ? '\n' : '') + line
       }
     }
     
-    // Add any remaining text
     if (currentText) {
-      sections.push({ type: 'text', content: currentText });
+      sections.push({ type: 'text', content: currentText })
     }
     
-    // If we ended with an unclosed code block, add it as text
     if (inCodeBlock && codeContent) {
-      sections.push({ type: 'text', content: '```' + codeLanguage + '\n' + codeContent });
+      sections.push({ type: 'text', content: '```' + codeLanguage + '\n' + codeContent })
     }
     
-    return sections;
-  };
+    return sections
+  }
   
-  // Format regular text (basic markdown formatting)
   const formatText = (text) => {
-    // First, handle double line breaks as paragraph breaks
-    const paragraphs = text.split(/\n\n+/);
+    const paragraphs = text.split(/\n\n+/)
     
     return paragraphs.map(paragraph => {
-      // For each paragraph, handle single line breaks by adding <br> tags
-      let processedText = paragraph.replace(/\n/g, '<br>');
+      let processedText = paragraph.replace(/\n/g, '<br>')
       
-      // Then handle other markdown formatting within each paragraph
+      processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>')
+      processedText = processedText.replace(/^# (.*?)$/gm, '<h1>$1</h1>')
+      processedText = processedText.replace(/^## (.*?)$/gm, '<h2>$1</h2>')
+      processedText = processedText.replace(/^### (.*?)$/gm, '<h3>$1</h3>')
+      processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
       
-      // Process bold text (**text**)
-      processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      
-      // Process italic text (*text*)
-      processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      
-      // Process headers (# Header)
-      processedText = processedText.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-      processedText = processedText.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
-      processedText = processedText.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
-      
-      // Process links ([text](url))
-      processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
-      
-      // Process lists (simplistic approach for this example)
-      if (processedText.indexOf('<li>') >= 0) {
-        // It's already been processed or contains HTML list items
-        return processedText;
-      } else if (processedText.match(/^- .*?(<br>- .*?)*$/)) {
-        // If the paragraph consists entirely of list items (with possible <br> tags between)
-        // First fix any <br> before list items (they should be removed)
-        processedText = processedText.replace(/<br>- /g, '- ');
-        
-        // Then process list items
-        processedText = processedText.replace(/^- (.*?)$/gm, '<li>$1</li>');
-        
-        // Wrap with <ul> tags
-        return '<ul>' + processedText + '</ul>';
+      if (processedText.match(/^- .*?(<br>- .*?)*$/)) {
+        processedText = processedText.replace(/<br>- /g, '- ')
+        processedText = processedText.replace(/^- (.*?)$/gm, '<li>$1</li>')
+        return '<ul>' + processedText + '</ul>'
       }
       
-      // If not a list or header, wrap in paragraph tags
       if (!processedText.match(/^<h[1-3]>/) && 
           !processedText.match(/^<ul>/) && 
           !processedText.trim().startsWith('<li>')) {
-        return '<p>' + processedText + '</p>';
+        return '<p>' + processedText + '</p>'
       }
       
-      return processedText;
-    }).join('');
-  };
+      return processedText
+    }).join('')
+  }
   
-  // Run code block handler
   const handleRunCode = (code) => {
-    // Placeholder function - in a real app this would execute the code
-    alert(`Code execution result: ${code.slice(0, 50)}...`);
-  };
+    alert(`Code execution result: ${code.slice(0, 50)}...`)
+  }
   
-  // Render code block
   const renderCodeBlock = (codeBlock, index) => {
     return (
       <Box key={`code-${index}`} sx={{ 
@@ -160,32 +123,29 @@ const MarkdownRenderer = ({ markdown }) => {
           Run
         </Button>
       </Box>
-    );
-  };
+    )
+  }
   
-  // Render text block with markdown formatting and preserving newlines
   const renderTextBlock = (textBlock, index) => {
-    const formattedHtml = formatText(textBlock.content);
+    const formattedHtml = formatText(textBlock.content)
     
-    // Apply custom CSS to control spacing
     const customStyles = `
       p { margin: 0 0 0.5em 0; }
       p:last-child { margin-bottom: 0; }
       h1, h2, h3 { margin-top: 0.8em; margin-bottom: 0.5em; }
       ul { margin-top: 0.3em; margin-bottom: 0.5em; }
       li { margin-bottom: 0.2em; }
-    `;
+    `
     
     return (
       <Box key={`text-${index}`} sx={{ my: 1 }}>
         <style>{customStyles}</style>
         <div dangerouslySetInnerHTML={{ __html: formattedHtml }} />
       </Box>
-    );
-  };
+    )
+  }
   
-  // Main renderer
-  const sections = parseMarkdown(markdown || '');
+  const sections = parseMarkdown(markdown || '')
   
   return (
     <Box>
@@ -195,8 +155,8 @@ const MarkdownRenderer = ({ markdown }) => {
           : renderTextBlock(section, index)
       )}
     </Box>
-  );
-};
+  )
+}
 
 const ContentArea = () => {
   const { 
@@ -205,82 +165,84 @@ const ContentArea = () => {
     selectedPage,
     isEditMode,
     getPageContent,
-    updatePageContent
+    updatePageContent,
+    cancelEdit,
+    editCanceled,
+    setEditCanceled
   } = useNotebook()
 
-  // Holds the current content while editing
   const [currentContent, setCurrentContent] = useState('')
-  
-  // Ref for the contentEditable div
   const editableRef = useRef(null)
-  
-  // Flag to track if the div has been initialized with content
   const [contentInitialized, setContentInitialized] = useState(false)
 
-  // Generate default content for new pages
+  useEffect(() => {
+    setEditCanceled(false)
+  }, [selectedPage, setEditCanceled])
+
   const generateDefaultContent = (pageName) => {
-    return `# ${pageName}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\n  console.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three`;
+    return `# ${pageName}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\n  console.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three`
   }
 
-  // When a page is selected, update the current content
   useEffect(() => {
     if (selectedPage) {
-      // Get the content for the selected page
-      let pageContent = getPageContent(selectedPage);
+      let pageContent = getPageContent(selectedPage)
       
-      // If no content exists, create default content and save it
       if (!pageContent) {
-        pageContent = generateDefaultContent(selectedPage);
-        updatePageContent(pageContent);
+        pageContent = generateDefaultContent(selectedPage)
+        updatePageContent(pageContent)
       }
       
-      setCurrentContent(pageContent);
-      
-      // Reset initialization when page changes
-      setContentInitialized(false);
+      setCurrentContent(pageContent)
+      setContentInitialized(false)
+      setEditCanceled(false)
     }
-  }, [selectedPage, getPageContent, updatePageContent]);
+  }, [selectedPage, getPageContent, updatePageContent, setEditCanceled])
 
-  // Set initial content when entering edit mode
   useEffect(() => {
     if (isEditMode && !contentInitialized && editableRef.current) {
-      // Set the initial content
-      editableRef.current.innerText = currentContent;
-      setContentInitialized(true);
+      editableRef.current.innerText = currentContent
+      setContentInitialized(true)
       
-      // Place cursor at the end
       setTimeout(() => {
         if (editableRef.current) {
-          editableRef.current.focus();
+          editableRef.current.focus()
           
-          const range = document.createRange();
-          const selection = window.getSelection();
+          const range = document.createRange()
+          const selection = window.getSelection()
           
-          range.selectNodeContents(editableRef.current);
-          range.collapse(false);
+          range.selectNodeContents(editableRef.current)
+          range.collapse(false)
           
-          selection.removeAllRanges();
-          selection.addRange(range);
+          selection.removeAllRanges()
+          selection.addRange(range)
         }
-      }, 0);
+      }, 0)
     }
-  }, [isEditMode, currentContent, contentInitialized]);
+  }, [isEditMode, currentContent, contentInitialized])
 
-  // Update currentContent as the user types
   const handleInput = () => {
     if (editableRef.current) {
-      setCurrentContent(editableRef.current.innerText);
+      setCurrentContent(editableRef.current.innerText)
     }
-  };
+  }
 
-  // When edit mode is turned off, save the content
   useEffect(() => {
-    if (!isEditMode && contentInitialized && selectedPage) {
-      // Save the content when exiting edit mode
-      updatePageContent(currentContent);
-      setContentInitialized(false);
+    if (editCanceled) {
+      if (editableRef.current) {
+        editableRef.current.innerText = getPageContent(selectedPage)
+      }
+      setCurrentContent(getPageContent(selectedPage))
+      setContentInitialized(false)
+      setEditCanceled(false)
     }
-  }, [isEditMode, contentInitialized, currentContent, selectedPage, updatePageContent]);
+  }, [editCanceled, getPageContent, selectedPage, setEditCanceled])
+
+  useEffect(() => {
+    if (!isEditMode && contentInitialized && selectedPage && !editCanceled) {
+      updatePageContent(currentContent)
+      setContentInitialized(false)
+    }
+  }, [isEditMode, contentInitialized, currentContent, selectedPage, updatePageContent, editCanceled])
 
   if (!selectedPage) {
     return (
@@ -294,15 +256,13 @@ const ContentArea = () => {
             : 'Select a notebook from the sidebar.'}
         </Typography>
       </Box>
-    );
+    )
   }
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Page Heading */}
       <Typography variant="h4">{selectedPage}</Typography>
 
-      {/* The text editor/viewer is in a scrollable container with increased height */}
       <Box
         sx={{
           height: '700px',
@@ -333,7 +293,7 @@ const ContentArea = () => {
         )}
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default ContentArea;
+export default ContentArea

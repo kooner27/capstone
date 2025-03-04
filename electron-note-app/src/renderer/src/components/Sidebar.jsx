@@ -37,7 +37,6 @@ const Sidebar = () => {
     setSelectedPage
   } = useNotebook()
 
-  // 1) No notebook selected => show notebooks list
   if (!selectedNotebook) {
     return (
       <Box
@@ -54,7 +53,12 @@ const Sidebar = () => {
         <Divider />
         <List>
           {notebooksData.map((notebook) => (
-            <ListItem button key={notebook.name} onClick={() => setSelectedNotebook(notebook)}>
+            <ListItem 
+              button 
+              key={notebook.name} 
+              onClick={() => setSelectedNotebook(notebook)}
+              sx={{ minHeight: 48 }}
+            >
               <ListItemText primary={notebook.name} />
             </ListItem>
           ))}
@@ -63,10 +67,8 @@ const Sidebar = () => {
     )
   }
 
-  // 2) Notebook selected => two columns: sections and pages
   return (
     <Box sx={{ width: 480, display: 'flex', boxSizing: 'border-box' }}>
-      {/* Left Column: Sections */}
       <Box
         sx={{
           width: 240,
@@ -75,12 +77,11 @@ const Sidebar = () => {
           boxSizing: 'border-box'
         }}
       >
-        {/* Header using Toolbar for consistent height */}
         <Toolbar sx={{ px: 2, minHeight: 56 }}>
           <Button
             onClick={() => setSelectedNotebook(null)}
             variant="outlined"
-            size="small" // optional: adjust button size if needed
+            size="small"
             sx={{ mr: 2 }}
           >
             Back
@@ -96,9 +97,10 @@ const Sidebar = () => {
               button
               key={section}
               selected={selectedSection === section}
+              sx={{ minHeight: 48 }}
               onClick={() => {
                 setSelectedSection(section)
-                setSelectedPage(null) // reset page on section switch
+                setSelectedPage(null)
               }}
             >
               <ListItemText primary={section} />
@@ -107,7 +109,6 @@ const Sidebar = () => {
         </List>
       </Box>
 
-      {/* Right Column: Pages */}
       <Box sx={{ width: 240, boxSizing: 'border-box' }}>
         {selectedSection ? (
           <>
@@ -119,7 +120,12 @@ const Sidebar = () => {
             <Divider />
             <List>
               {(dummyPages[selectedSection] || []).map((page) => (
-                <ListItem button key={page} onClick={() => setSelectedPage(page)}>
+                <ListItem 
+                  button 
+                  key={page} 
+                  onClick={() => setSelectedPage(page)}
+                  sx={{ minHeight: 48 }}
+                >
                   <ListItemText primary={page} />
                 </ListItem>
               ))}
