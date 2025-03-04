@@ -6,7 +6,17 @@ import { useState } from 'react'
 
 const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate()
-  const { isEditMode, toggleEditMode, selectedPage, isDirty, cancelEdit } = useNotebook()
+  const { 
+    isEditMode, 
+    toggleEditMode, 
+    selectedNote, 
+    selectedNotebook,
+    selectedSection,
+    isDirty,
+    cancelEdit,
+    updateNote
+  } = useNotebook()
+  
   const [showSaveMessage, setShowSaveMessage] = useState(false)
 
   const handleLogout = () => {
@@ -16,9 +26,11 @@ const Navbar = ({ toggleSidebar }) => {
   
   const handleEditClick = () => {
     if (isEditMode) {
+      // Save changes
       setShowSaveMessage(true)
       toggleEditMode(true)
     } else {
+      // Enter edit mode
       toggleEditMode()
     }
   }
@@ -29,6 +41,16 @@ const Navbar = ({ toggleSidebar }) => {
 
   const handleViewClick = () => {
     if (isEditMode) {
+      // If in edit mode, save changes first
+      if (isDirty && selectedNote && selectedNotebook && selectedSection) {
+        updateNote(
+          selectedNotebook._id,
+          selectedSection._id,
+          selectedNote._id,
+          selectedNote.title,
+          selectedNote.content
+        )
+      }
       cancelEdit()
     }
   }
@@ -67,7 +89,7 @@ const Navbar = ({ toggleSidebar }) => {
             <Button 
               color="inherit" 
               onClick={handleEditClick}
-              disabled={!selectedPage}
+              disabled={!selectedNote}
               variant={isEditMode ? "contained" : "text"}
               sx={{ 
                 width: 80,
@@ -83,7 +105,7 @@ const Navbar = ({ toggleSidebar }) => {
             <Button 
               color="inherit"
               onClick={handleViewClick}
-              disabled={!selectedPage}
+              disabled={!selectedNote}
               variant={!isEditMode ? "contained" : "text"}
               sx={{ 
                 width: 80,

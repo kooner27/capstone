@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Box, Typography, Button } from '@mui/material'
+import { Box, Typography, Button, CircularProgress } from '@mui/material'
 import { useNotebook } from './NotebookContext'
 
 const MarkdownRenderer = ({ markdown }) => {
+  // Markdown renderer code unchanged
   const parseMarkdown = (text) => {
     const sections = []
     let currentText = ''
@@ -160,108 +161,239 @@ const MarkdownRenderer = ({ markdown }) => {
 
 const ContentArea = () => {
   const { 
-    selectedNotebook, 
-    selectedSection, 
-    selectedPage,
+    selectedNotebook,
+    selectedSection,
+    selectedNote,
     isEditMode,
-    getPageContent,
+    isLoading,
+    error,
     updatePageContent,
+    updateNote,
     cancelEdit,
     editCanceled,
-    setEditCanceled
-  } = useNotebook()
+    setEditCanceled,
+    editStartContent,
+    originalNoteContent
+  } = useNotebook();
 
-  const [currentContent, setCurrentContent] = useState('')
-  const editableRef = useRef(null)
-  const [contentInitialized, setContentInitialized] = useState(false)
-
-  useEffect(() => {
-    setEditCanceled(false)
-  }, [selectedPage, setEditCanceled])
-
-  const generateDefaultContent = (pageName) => {
-    return `# ${pageName}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\n  console.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three`
-  }
-
-  useEffect(() => {
-    if (selectedPage) {
-      let pageContent = getPageContent(selectedPage)
-      
-      if (!pageContent) {
-        pageContent = generateDefaultContent(selectedPage)
-        updatePageContent(pageContent)
-      }
-      
-      setCurrentContent(pageContent)
-      setContentInitialized(false)
-      setEditCanceled(false)
-    }
-  }, [selectedPage, getPageContent, updatePageContent, setEditCanceled])
-
-  useEffect(() => {
-    if (isEditMode && !contentInitialized && editableRef.current) {
-      editableRef.current.innerText = currentContent
-      setContentInitialized(true)
-      
-      setTimeout(() => {
-        if (editableRef.current) {
-          editableRef.current.focus()
-          
-          const range = document.createRange()
-          const selection = window.getSelection()
-          
-          range.selectNodeContents(editableRef.current)
-          range.collapse(false)
-          
-          selection.removeAllRanges()
-          selection.addRange(range)
-        }
-      }, 0)
-    }
-  }, [isEditMode, currentContent, contentInitialized])
-
-  const handleInput = () => {
-    if (editableRef.current) {
-      setCurrentContent(editableRef.current.innerText)
-    }
-  }
-
+  const editableRef = useRef(null);
+  const [debugInfo, setDebugInfo] = useState('');
+  const contentBuffer = useRef(''); // Buffer to store content without re-rendering
+  
+  // Modified: Handle edit cancellation with the new dedicated variable
   useEffect(() => {
     if (editCanceled) {
-      if (editableRef.current) {
-        editableRef.current.innerText = getPageContent(selectedPage)
+      console.log('Edit canceled detected, restoring original content:', editStartContent);
+      
+      // Reset the editor directly with edit start content
+      if (editableRef.current && isEditMode) {
+        editableRef.current.innerText = editStartContent;
       }
-      setCurrentContent(getPageContent(selectedPage))
-      setContentInitialized(false)
-      setEditCanceled(false)
+      
+      // CRITICAL FIX: When cancelling, we need to explicitly update the content
+      // that will be displayed in view mode, using updatePageContent
+      updatePageContent(editStartContent);
+      contentBuffer.current = editStartContent;
+      
+      setDebugInfo(`Cancel: Reverted to stored edit-start content (${editStartContent.length} chars)`);
+      setEditCanceled(false);
     }
-  }, [editCanceled, getPageContent, selectedPage, setEditCanceled])
+  }, [editCanceled, editStartContent, isEditMode, setEditCanceled, updatePageContent]);
 
+  // Handle Enter key for line breaks
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      const selection = window.getSelection();
+      const range = selection.getRangeAt(0);
+      
+      // Create a newline character
+      const textNode = document.createTextNode('\n');
+      range.insertNode(textNode);
+      
+      // Move caret after the newline
+      range.setStartAfter(textNode);
+      range.setEndAfter(textNode);
+      
+      // Manual indentation for code blocks
+      const content = editableRef.current?.innerText || '';
+      const cursorPos = getCursorPosition(editableRef.current);
+      const linesBeforeCursor = content.substring(0, cursorPos).split('\n');
+      
+      // Check if previous line had indentation
+      if (linesBeforeCursor.length > 0) {
+        const prevLine = linesBeforeCursor[linesBeforeCursor.length - 1];
+        const indentMatch = prevLine.match(/^(\s+)/);
+        
+        if (indentMatch) {
+          // Insert the same indentation after the newline
+          const indentation = indentMatch[1];
+          const indentNode = document.createTextNode(indentation);
+          range.insertNode(indentNode);
+          
+          // Set caret after indent
+          range.setStartAfter(indentNode);
+          range.setEndAfter(indentNode);
+        }
+      }
+      
+      selection.removeAllRanges();
+      selection.addRange(range);
+      
+      // Update the buffer with new content
+      if (editableRef.current) {
+        contentBuffer.current = editableRef.current.innerText || '';
+      }
+    }
+  };
+  
+  // Helper function to get cursor position
+  const getCursorPosition = (element) => {
+    let position = 0;
+    if (!element) return position;
+    
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return position;
+    
+    const range = selection.getRangeAt(0).cloneRange();
+    range.setStart(element, 0);
+    position = range.toString().length;
+    
+    return position;
+  };
+
+  // Update content when user types - FIXED VERSION
+  const handleInput = () => {
+    if (editableRef.current) {
+      // Store content in a ref instead of updating state immediately
+      // This prevents re-renders during typing
+      contentBuffer.current = editableRef.current.innerText || '';
+    }
+  };
+
+  // Update state only when focus is lost or edit mode is exited
+  const handleBlur = () => {
+    // Now we can update the state without affecting typing
+    if (contentBuffer.current) {
+      updatePageContent(contentBuffer.current);
+    }
+  };
+
+  // Make sure content is saved when exiting edit mode
   useEffect(() => {
-    if (!isEditMode && contentInitialized && selectedPage && !editCanceled) {
-      updatePageContent(currentContent)
-      setContentInitialized(false)
+    if (!isEditMode && contentBuffer.current) {
+      updatePageContent(contentBuffer.current);
+      contentBuffer.current = '';
     }
-  }, [isEditMode, contentInitialized, currentContent, selectedPage, updatePageContent, editCanceled])
+  }, [isEditMode, updatePageContent]);
 
-  if (!selectedPage) {
+  // Initialization when switching to edit mode
+  useEffect(() => {
+    if (isEditMode && editableRef.current && selectedNote) {
+      console.log('Initializing editor with content:', selectedNote.content);
+      
+      // Make sure we set the content correctly when entering edit mode
+      editableRef.current.innerText = selectedNote.content || '';
+      contentBuffer.current = selectedNote.content || '';
+      
+      // Focus and position cursor at end
+      setTimeout(() => {
+        if (editableRef.current) {
+          editableRef.current.focus();
+          
+          const range = document.createRange();
+          const selection = window.getSelection();
+          
+          range.selectNodeContents(editableRef.current);
+          range.collapse(false); // collapse to end
+          
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }, 10);
+    }
+  }, [isEditMode, selectedNote]);
+
+  // Generate default content for new notes
+  const generateDefaultContent = (title) => {
+    return `# ${title}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\n  console.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three`;
+  };
+
+  // Initialize new notes with default content
+  useEffect(() => {
+    if (selectedNote) {
+      let content = selectedNote.content || '';
+      
+      if (!content && selectedNote.title) {
+        content = generateDefaultContent(selectedNote.title);
+        if (selectedNotebook && selectedSection) {
+          updateNote(
+            selectedNotebook._id,
+            selectedSection._id,
+            selectedNote._id,
+            selectedNote.title,
+            content
+          );
+        }
+      }
+    }
+  }, [selectedNote, selectedNotebook, selectedSection, updateNote]);
+
+  // Loading state
+  if (isLoading && !selectedNote) {
+    return (
+      <Box sx={{ 
+        p: 3,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100%'
+      }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error">Error: {error}</Typography>
+        <Button variant="contained" onClick={() => window.location.reload()} sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  // Welcome message when no note is selected
+  if (!selectedNote) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography variant="h4">Welcome to TwoNote</Typography>
         <Typography variant="body1">
           {selectedSection
-            ? `Currently viewing section: ${selectedSection}. Select a page to view its content.`
+            ? `Currently viewing section: ${selectedSection.title}. Select a note to view its content.`
             : selectedNotebook
-            ? `Currently viewing ${selectedNotebook.name}. Pick a section to view pages.`
+            ? `Currently viewing ${selectedNotebook.name}. Pick a section to view notes.`
             : 'Select a notebook from the sidebar.'}
         </Typography>
       </Box>
-    )
+    );
   }
 
+  // Main content area with note content
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4">{selectedPage}</Typography>
+      <Typography variant="h4">{selectedNote.title}</Typography>
+      
+      {/* Debug info */}
+      {debugInfo && (
+        <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
+          {debugInfo}
+        </Typography>
+      )}
 
       <Box
         sx={{
@@ -273,11 +405,13 @@ const ContentArea = () => {
         }}
       >
         {isEditMode ? (
-          <div
+          <pre
             ref={editableRef}
             contentEditable
             suppressContentEditableWarning={true}
             onInput={handleInput}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
             style={{
               minHeight: "100%",
               outline: "none",
@@ -285,15 +419,16 @@ const ContentArea = () => {
               fontFamily: "monospace",
               fontSize: "1rem",
               lineHeight: "1.5",
-              padding: "8px"
+              padding: "8px",
+              margin: 0
             }}
           />
         ) : (
-          <MarkdownRenderer markdown={getPageContent(selectedPage)} />
+          <MarkdownRenderer markdown={selectedNote.content || ''} />
         )}
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default ContentArea
+export default ContentArea;
