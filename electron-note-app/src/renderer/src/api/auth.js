@@ -35,3 +35,38 @@ export const loginUser = async (user) => {
 
   return responseData
 }
+
+// New helper functions to add
+export const getCurrentUser = () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    
+    // Simple JWT parsing
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    
+    // Check if token is expired
+    if (payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem('token');
+      return null;
+    }
+    
+    return {
+      id: payload.user_id,
+      // You can add more user properties here if they're included in the JWT
+    };
+  } catch (error) {
+    console.error('Error extracting user data from token:', error);
+    localStorage.removeItem('token');
+    return null;
+  }
+}
+
+export const isAuthenticated = () => {
+  return !!getCurrentUser();
+}
+
+export const logout = () => {
+  localStorage.removeItem('token');
+  navigate('/signin')
+}
