@@ -8,6 +8,8 @@ import jwt
 import datetime
 from functools import wraps
 from bson import ObjectId 
+from search import create_search_indexes, register_search_endpoint  # Import functions from search.py
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -26,6 +28,12 @@ users_collection = db["users"]
 notebooks_collection = db["notebooks"]
 sections_collection = db["sections"]
 notes_collection = db["notes"]
+
+# Create search indexes on startup
+create_search_indexes(db)
+
+# Register the search endpoint from search.py
+register_search_endpoint(app, notebooks_collection, sections_collection, notes_collection)
 
 # ------------------------------------------------------------------------------
 # API Status Endpoint
