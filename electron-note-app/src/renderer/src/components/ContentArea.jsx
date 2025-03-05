@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Box, Typography, Button, CircularProgress } from '@mui/material'
 import { useNotebook } from './NotebookContext'
+import { useNotebookData } from './NotebookDataContext'
 
+// MarkdownRenderer component is unchanged
 const MarkdownRenderer = ({ markdown }) => {
   // Markdown renderer code unchanged
   const parseMarkdown = (text) => {
@@ -160,20 +162,24 @@ const MarkdownRenderer = ({ markdown }) => {
 }
 
 const ContentArea = () => {
+  // Get selection and edit state from NotebookContext
   const { 
     selectedNotebook,
     selectedSection,
     selectedNote,
     isEditMode,
-    isLoading,
-    error,
-    updatePageContent,
-    updateNote,
-    cancelEdit,
     editCanceled,
     setEditCanceled,
+    updatePageContent,
     editStartContent
   } = useNotebook();
+
+  // Get loading, error, and data operations from NotebookDataContext
+  const {
+    isLoading,
+    error,
+    updateNote
+  } = useNotebookData();
 
   const editableRef = useRef(null);
   const contentBuffer = useRef(''); // Buffer to store content without re-rendering
@@ -199,48 +205,35 @@ const ContentArea = () => {
   // Handle Enter key for line breaks
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      const selection = window.getSelection();
-      const range = selection.getRangeAt(0);
-      
-      // Create a newline character
-      const textNode = document.createTextNode('\n');
-      range.insertNode(textNode);
-      
-      // Move caret after the newline
-      range.setStartAfter(textNode);
-      range.setEndAfter(textNode);
-      
-      // Manual indentation for code blocks
+      // Store information about indentation before the default Enter action
       const content = editableRef.current?.innerText || '';
       const cursorPos = getCursorPosition(editableRef.current);
-      const linesBeforeCursor = content.substring(0, cursorPos).split('\n');
+      const lines = content.substring(0, cursorPos).split('\n');
+      let indentation = '';
       
       // Check if previous line had indentation
-      if (linesBeforeCursor.length > 0) {
-        const prevLine = linesBeforeCursor[linesBeforeCursor.length - 1];
+      if (lines.length > 0) {
+        const prevLine = lines[lines.length - 1];
         const indentMatch = prevLine.match(/^(\s+)/);
-        
         if (indentMatch) {
-          // Insert the same indentation after the newline
-          const indentation = indentMatch[1];
-          const indentNode = document.createTextNode(indentation);
-          range.insertNode(indentNode);
-          
-          // Set caret after indent
-          range.setStartAfter(indentNode);
-          range.setEndAfter(indentNode);
+          indentation = indentMatch[1];
         }
       }
       
-      selection.removeAllRanges();
-      selection.addRange(range);
+      // If there's indentation to preserve, handle it manually
+      if (indentation) {
+        e.preventDefault(); // Only prevent default if we need to handle indentation
+        
+        // Insert a real newline character followed by the indentation
+        document.execCommand('insertText', false, '\n' + indentation);
+      }
       
       // Update the buffer with new content
-      if (editableRef.current) {
-        contentBuffer.current = editableRef.current.innerText || '';
-      }
+      setTimeout(() => {
+        if (editableRef.current) {
+          contentBuffer.current = editableRef.current.innerText || '';
+        }
+      }, 0);
     }
   };
   
@@ -386,7 +379,9 @@ const ContentArea = () => {
         sx={{
           height: '700px',
           overflowY: 'auto',
-          p: 1,
+          pl: 0, // Remove left padding to align with title
+          pr: 0, // Remove right padding
+          py: 1, // Keep top and bottom padding
           mt: 2,
           backgroundColor: 'transparent'
         }}
@@ -406,7 +401,7 @@ const ContentArea = () => {
               fontFamily: "monospace",
               fontSize: "1rem",
               lineHeight: "1.5",
-              padding: "8px",
+              padding: "8px 0", // Removed left/right padding
               margin: 0
             }}
           />

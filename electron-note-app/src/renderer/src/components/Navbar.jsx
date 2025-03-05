@@ -2,6 +2,7 @@ import { AppBar, Toolbar, Typography, Button, TextField, IconButton, Box, Snackb
 import MenuIcon from '@mui/icons-material/Menu'
 import { useNavigate } from 'react-router-dom'
 import { useNotebook } from './NotebookContext'
+import { useNotebookData } from './NotebookDataContext'
 import { useState } from 'react'
 
 const Navbar = ({ toggleSidebar }) => {
@@ -14,8 +15,9 @@ const Navbar = ({ toggleSidebar }) => {
     selectedSection,
     isDirty,
     cancelEdit,
-    updateNote
   } = useNotebook()
+  
+  const { updateNote } = useNotebookData()
   
   const [showSaveMessage, setShowSaveMessage] = useState(false)
 
