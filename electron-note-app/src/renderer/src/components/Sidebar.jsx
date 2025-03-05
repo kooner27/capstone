@@ -300,7 +300,7 @@ const Sidebar = () => {
       <Box sx={{ width: 240 }}>
         <Toolbar sx={{ minHeight: 56, px: 2, justifyContent: 'space-between' }}>
           <Typography variant="h6" noWrap>
-            {selectedSection ? `Notes in ${selectedSection.title}` : 'Select a section'}
+            {selectedSection ? `${selectedSection.title}` : 'Select a section'}
           </Typography>
           {selectedSection && (
             <Button 

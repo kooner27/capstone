@@ -172,15 +172,13 @@ const ContentArea = () => {
     cancelEdit,
     editCanceled,
     setEditCanceled,
-    editStartContent,
-    originalNoteContent
+    editStartContent
   } = useNotebook();
 
   const editableRef = useRef(null);
-  const [debugInfo, setDebugInfo] = useState('');
   const contentBuffer = useRef(''); // Buffer to store content without re-rendering
   
-  // Modified: Handle edit cancellation with the new dedicated variable
+  // Handle edit cancellation
   useEffect(() => {
     if (editCanceled) {
       console.log('Edit canceled detected, restoring original content:', editStartContent);
@@ -190,12 +188,10 @@ const ContentArea = () => {
         editableRef.current.innerText = editStartContent;
       }
       
-      // CRITICAL FIX: When cancelling, we need to explicitly update the content
-      // that will be displayed in view mode, using updatePageContent
+      // When cancelling, update the content that will be displayed in view mode
       updatePageContent(editStartContent);
       contentBuffer.current = editStartContent;
       
-      setDebugInfo(`Cancel: Reverted to stored edit-start content (${editStartContent.length} chars)`);
       setEditCanceled(false);
     }
   }, [editCanceled, editStartContent, isEditMode, setEditCanceled, updatePageContent]);
@@ -263,18 +259,16 @@ const ContentArea = () => {
     return position;
   };
 
-  // Update content when user types - FIXED VERSION
+  // Update content when user types
   const handleInput = () => {
     if (editableRef.current) {
       // Store content in a ref instead of updating state immediately
-      // This prevents re-renders during typing
       contentBuffer.current = editableRef.current.innerText || '';
     }
   };
 
-  // Update state only when focus is lost or edit mode is exited
+  // Update state only when focus is lost
   const handleBlur = () => {
-    // Now we can update the state without affecting typing
     if (contentBuffer.current) {
       updatePageContent(contentBuffer.current);
     }
@@ -293,7 +287,7 @@ const ContentArea = () => {
     if (isEditMode && editableRef.current && selectedNote) {
       console.log('Initializing editor with content:', selectedNote.content);
       
-      // Make sure we set the content correctly when entering edit mode
+      // Set the content correctly when entering edit mode
       editableRef.current.innerText = selectedNote.content || '';
       contentBuffer.current = selectedNote.content || '';
       
@@ -388,13 +382,6 @@ const ContentArea = () => {
     <Box sx={{ p: 3 }}>
       <Typography variant="h4">{selectedNote.title}</Typography>
       
-      {/* Debug info */}
-      {debugInfo && (
-        <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
-          {debugInfo}
-        </Typography>
-      )}
-
       <Box
         sx={{
           height: '700px',

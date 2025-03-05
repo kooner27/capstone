@@ -18,7 +18,6 @@ export const NotebookProvider = ({ children }) => {
   // UI state
   const [selectedNotebook, setSelectedNotebook] = useState(null)
   const [selectedSection, setSelectedSection] = useState(null)
-  const [selectedPage, setSelectedPage] = useState(null)
   const [selectedNote, setSelectedNote] = useState(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
@@ -26,7 +25,7 @@ export const NotebookProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   
-  // Critical fix: Store original content in a dedicated variable that won't be affected by editing
+  // Store original content in a dedicated variable
   const [originalNoteContent, setOriginalNoteContent] = useState('')
   const [editStartContent, setEditStartContent] = useState('')
 
@@ -40,7 +39,6 @@ export const NotebookProvider = ({ children }) => {
     if (selectedNotebook) {
       fetchSections(selectedNotebook._id)
       setSelectedSection(null)
-      setSelectedPage(null)
       setSelectedNote(null)
     }
   }, [selectedNotebook])
@@ -49,15 +47,13 @@ export const NotebookProvider = ({ children }) => {
   useEffect(() => {
     if (selectedNotebook && selectedSection) {
       fetchNotes(selectedNotebook._id, selectedSection._id)
-      setSelectedPage(null)
       setSelectedNote(null)
     }
   }, [selectedSection])
 
-  // Update selected page and original content when a note is selected
+  // Update original content when a note is selected
   useEffect(() => {
     if (selectedNote) {
-      setSelectedPage(selectedNote.title)
       // Store original content for cancellation
       setOriginalNoteContent(selectedNote.content || '')
       console.log('Original content set:', selectedNote.content || '')
@@ -193,13 +189,11 @@ export const NotebookProvider = ({ children }) => {
         // Update original content after saving
         setOriginalNoteContent(selectedNote.content || '')
         setIsDirty(false)
-      } else {
-        // Cancel - handled by cancelEdit
       }
     } else {
       // Entering edit mode - capture original content for potential cancel
       if (selectedNote) {
-        // CRITICAL FIX: Store content at edit start time in dedicated variable
+        // Store content at edit start time
         setEditStartContent(selectedNote.content || '');
         console.log('Edit start content captured:', selectedNote.content || '');
       }
@@ -211,11 +205,11 @@ export const NotebookProvider = ({ children }) => {
     console.log('Cancel edit called - reverting to stored content:', editStartContent)
     
     if (selectedNote) {
-      // FIX: Use the dedicated edit start content variable to restore
+      // Use the dedicated edit start content variable to restore
       const revertedNote = { ...selectedNote, content: editStartContent }
       setSelectedNote(revertedNote)
       
-      // CRITICAL: Set the content directly from our dedicated variable
+      // Set the content directly from our dedicated variable
       updatePageContent(editStartContent)
       
       // Notify components that edit was canceled
@@ -224,11 +218,6 @@ export const NotebookProvider = ({ children }) => {
     
     setIsEditMode(false)
     setIsDirty(false)
-  }
-
-  const getPageContent = (pageName) => {
-    if (!selectedNote) return ''
-    return selectedNote.content || ''
   }
 
   const updatePageContent = (content) => {
@@ -252,8 +241,6 @@ export const NotebookProvider = ({ children }) => {
         setSelectedNotebook,
         selectedSection,
         setSelectedSection,
-        selectedPage,
-        setSelectedPage,
         selectedNote, 
         setSelectedNote,
         // UI state
@@ -268,11 +255,10 @@ export const NotebookProvider = ({ children }) => {
         // Content tracking
         originalNoteContent,
         setOriginalNoteContent,
-        editStartContent, // IMPORTANT: Expose this to components
+        editStartContent,
         // UI actions
         toggleEditMode,
         cancelEdit,
-        getPageContent,
         updatePageContent,
         // CRUD operations
         createNotebook: handleCreateNotebook,
