@@ -1,4 +1,15 @@
-import { AppBar, Toolbar, Typography, Button, TextField, IconButton, Box, Snackbar, Alert, Divider } from '@mui/material'
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Snackbar,
+  Alert,
+  Divider
+} from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import { useNavigate } from 'react-router-dom'
 import { useNotebook } from './NotebookContext'
@@ -10,10 +21,10 @@ import 'jspdf-autotable'
 
 const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate()
-  const { 
-    isEditMode, 
-    toggleEditMode, 
-    selectedNote, 
+  const {
+    isEditMode,
+    toggleEditMode,
+    selectedNote,
     selectedNotebook,
     selectedSection,
     isDirty,
@@ -31,16 +42,16 @@ const Navbar = ({ toggleSidebar }) => {
     createNotebook,
     createSection
   } = useNotebook()
-  
+
   const { updateNote } = useNotebookData()
-  
+
   const [showSaveMessage, setShowSaveMessage] = useState(false)
 
   const handleLogout = () => {
     localStorage.removeItem('token')
     navigate('/signin')
   }
-  
+
   const handleEditClick = () => {
     if (isEditMode) {
       if (isPreviewMode) {
@@ -51,7 +62,6 @@ const Navbar = ({ toggleSidebar }) => {
         toggleEditMode()
       }
     } else {
-      // Enter edit mode
       toggleEditMode()
     }
   }
@@ -88,45 +98,43 @@ const Navbar = ({ toggleSidebar }) => {
             TwoNote
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Button 
+            <Button
               color="inherit"
               onClick={handleCancelClick}
               variant="text"
-              sx={{ 
-                bgcolor: 'transparent',
+              sx={{
                 visibility: isEditMode ? 'visible' : 'hidden',
-                width: 80,
-                minWidth: 80,
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.08)'
-                }
+                width: 80
               }}
             >
               Exit
             </Button>
-            <Button 
-              color="inherit" 
+            <Button
+              color="inherit"
               onClick={isEditMode && !isPreviewMode ? handleSaveClick : handleEditClick}
               disabled={!selectedNote}
-              variant={isEditMode && !isPreviewMode ? "contained" : "text"}
-              sx={{ 
+              variant={isEditMode && !isPreviewMode ? 'contained' : 'text'}
+              sx={{
                 width: 80,
                 minWidth: 80,
                 visibility: !selectedNote ? 'hidden' : 'visible',
                 bgcolor: isEditMode && !isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
                 '&:hover': {
-                  bgcolor: isEditMode && !isPreviewMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
+                  bgcolor:
+                    isEditMode && !isPreviewMode
+                      ? 'rgba(255, 255, 255, 0.25)'
+                      : 'rgba(255, 255, 255, 0.08)'
                 }
               }}
             >
-              {isEditMode ? (isPreviewMode ? "Edit" : "Save") : "Edit"}
+              {isEditMode ? (isPreviewMode ? 'Edit' : 'Save') : 'Edit'}
             </Button>
-            <Button 
+            <Button
               color="inherit"
               onClick={handleViewClick}
               disabled={!selectedNote}
-              variant={isPreviewMode ? "contained" : "text"}
-              sx={{ 
+              variant={isPreviewMode ? 'contained' : 'text'}
+              sx={{
                 width: 80,
                 minWidth: 80,
                 bgcolor: isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
@@ -139,30 +147,38 @@ const Navbar = ({ toggleSidebar }) => {
               View
             </Button>
           </Box>
-          <Box sx={{ 
-            flexGrow: 1, 
-            display: 'flex', 
-            justifyContent: 'center',
-            alignItems: 'center',
-            mx: 2
-          }}>
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              mx: 2
+            }}
+          >
             <TextField
               variant="outlined"
               placeholder="Search..."
               size="small"
-              sx={{ 
-                backgroundColor: 'white', 
+              sx={{
+                backgroundColor: 'white',
                 borderRadius: 1,
                 width: 240
               }}
             />
           </Box>
           <Import />
-          <Divider orientation="vertical" flexItem sx={{ mx: 1, bgcolor: 'rgba(255, 255, 255, 0.3)' }} />
-          <Button color="inherit" onClick={handleLogout}>Logout</Button>
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{ mx: 1, bgcolor: 'rgba(255, 255, 255, 0.3)' }}
+          />
+          <Button color="inherit" onClick={handleLogout}>
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
-      
+
       <Snackbar
         open={showSaveMessage}
         autoHideDuration={3000}
