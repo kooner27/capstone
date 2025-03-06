@@ -1,36 +1,45 @@
-import { AppBar, Toolbar, Typography, Button, TextField, IconButton, Box, Snackbar, Alert } from '@mui/material'
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Snackbar,
+  Alert
+} from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import { useNavigate } from 'react-router-dom'
 import { useNotebook } from './NotebookContext'
 import { useState } from 'react'
+import SearchBar from './SearchBar'
 
 const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate()
-  const { 
-    isEditMode, 
-    toggleEditMode, 
-    selectedNote, 
+  const {
+    isEditMode,
+    toggleEditMode,
+    selectedNote,
     selectedNotebook,
     selectedSection,
     isDirty,
     cancelEdit,
     updateNote
   } = useNotebook()
-  
+
   const [showSaveMessage, setShowSaveMessage] = useState(false)
 
   const handleLogout = () => {
     localStorage.removeItem('token')
     navigate('/signin')
   }
-  
+
   const handleEditClick = () => {
     if (isEditMode) {
-      // Save changes
       setShowSaveMessage(true)
       toggleEditMode(true)
     } else {
-      // Enter edit mode
       toggleEditMode()
     }
   }
@@ -41,7 +50,6 @@ const Navbar = ({ toggleSidebar }) => {
 
   const handleViewClick = () => {
     if (isEditMode) {
-      // If in edit mode, save changes first
       if (isDirty && selectedNote && selectedNotebook && selectedSection) {
         updateNote(
           selectedNotebook._id,
@@ -62,85 +70,63 @@ const Navbar = ({ toggleSidebar }) => {
   return (
     <>
       <AppBar position="static">
-        <Toolbar>
-          <IconButton color="inherit" edge="start" onClick={toggleSidebar} sx={{ mr: 2 }}>
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            TwoNote
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Button 
+        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Left side: Menu button, title, and search bar */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <IconButton color="inherit" edge="start" onClick={toggleSidebar}>
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6">TwoNote</Typography>
+
+            <Box sx={{ ml: 10 }}>
+              <SearchBar />
+            </Box>
+          </Box>
+
+          {/* Center: Edit, View, Cancel buttons */}
+          <Box
+            sx={{ display: 'flex', alignItems: 'centre', flexGrow: 0.5, justifyContent: 'left' }}
+          >
+            <Button
               color="inherit"
               onClick={handleCancelClick}
               variant="text"
-              sx={{ 
-                bgcolor: 'transparent',
+              sx={{
                 visibility: isEditMode ? 'visible' : 'hidden',
-                width: 80,
-                minWidth: 80,
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.08)'
-                }
+                width: 80
               }}
             >
               Cancel
             </Button>
-            <Button 
-              color="inherit" 
+            <Button
+              color="inherit"
               onClick={handleEditClick}
               disabled={!selectedNote}
-              variant={isEditMode ? "contained" : "text"}
-              sx={{ 
-                width: 80,
-                minWidth: 80,
-                bgcolor: isEditMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-                '&:hover': {
-                  bgcolor: isEditMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
-                }
-              }}
+              variant={isEditMode ? 'contained' : 'text'}
+              sx={{ width: 80 }}
             >
-              {isEditMode ? "Save" : "Edit"}
+              {isEditMode ? 'Save' : 'Edit'}
             </Button>
-            <Button 
+            <Button
               color="inherit"
               onClick={handleViewClick}
               disabled={!selectedNote}
-              variant={!isEditMode ? "contained" : "text"}
-              sx={{ 
-                width: 80,
-                minWidth: 80,
-                bgcolor: !isEditMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-                '&:hover': {
-                  bgcolor: !isEditMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
-                }
-              }}
+              variant={!isEditMode ? 'contained' : 'text'}
+              sx={{ width: 80 }}
             >
               View
             </Button>
           </Box>
-          <Box sx={{ 
-            flexGrow: 1, 
-            display: 'flex', 
-            justifyContent: 'center',
-            width: 300,
-            mx: 2
-          }}>
-            <TextField
-              variant="outlined"
-              placeholder="Search..."
-              size="small"
-              sx={{ 
-                backgroundColor: 'white', 
-                borderRadius: 1,
-                width: 240
-              }}
-            />
+
+          {/* Right side: Logout button */}
+          <Box>
+            <Button color="inherit" onClick={handleLogout}>
+              Logout
+            </Button>
           </Box>
-          <Button color="inherit" onClick={handleLogout}>Logout</Button>
         </Toolbar>
       </AppBar>
-      
+
       <Snackbar
         open={showSaveMessage}
         autoHideDuration={3000}
