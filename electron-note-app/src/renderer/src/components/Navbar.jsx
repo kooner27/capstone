@@ -15,6 +15,10 @@ const Navbar = ({ toggleSidebar }) => {
     selectedSection,
     isDirty,
     cancelEdit,
+    isPreviewMode,
+    togglePreviewMode,
+    setIsPreviewMode,
+    saveContent
   } = useNotebook()
   
   const { updateNote } = useNotebookData()
@@ -28,12 +32,23 @@ const Navbar = ({ toggleSidebar }) => {
   
   const handleEditClick = () => {
     if (isEditMode) {
-      // Save changes
-      setShowSaveMessage(true)
-      toggleEditMode(true)
+      if (isPreviewMode) {
+        // If we're in preview mode, go back to edit mode
+        setIsPreviewMode(false)
+      } else {
+        // We're in edit mode but not preview mode
+        toggleEditMode()
+      }
     } else {
       // Enter edit mode
       toggleEditMode()
+    }
+  }
+
+  const handleSaveClick = () => {
+    // Just save without exiting edit mode
+    if (saveContent()) {
+      setShowSaveMessage(true)
     }
   }
 
@@ -43,17 +58,7 @@ const Navbar = ({ toggleSidebar }) => {
 
   const handleViewClick = () => {
     if (isEditMode) {
-      // If in edit mode, save changes first
-      if (isDirty && selectedNote && selectedNotebook && selectedSection) {
-        updateNote(
-          selectedNotebook._id,
-          selectedSection._id,
-          selectedNote._id,
-          selectedNote.title,
-          selectedNote.content
-        )
-      }
-      cancelEdit()
+      setIsPreviewMode(true)
     }
   }
 
@@ -86,35 +91,37 @@ const Navbar = ({ toggleSidebar }) => {
                 }
               }}
             >
-              Cancel
+              Exit
             </Button>
             <Button 
               color="inherit" 
-              onClick={handleEditClick}
+              onClick={isEditMode && !isPreviewMode ? handleSaveClick : handleEditClick}
               disabled={!selectedNote}
-              variant={isEditMode ? "contained" : "text"}
+              variant={isEditMode && !isPreviewMode ? "contained" : "text"}
               sx={{ 
                 width: 80,
                 minWidth: 80,
-                bgcolor: isEditMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                visibility: !selectedNote ? 'hidden' : 'visible',
+                bgcolor: isEditMode && !isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
                 '&:hover': {
-                  bgcolor: isEditMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
+                  bgcolor: isEditMode && !isPreviewMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
                 }
               }}
             >
-              {isEditMode ? "Save" : "Edit"}
+              {isEditMode ? (isPreviewMode ? "Edit" : "Save") : "Edit"}
             </Button>
             <Button 
               color="inherit"
               onClick={handleViewClick}
               disabled={!selectedNote}
-              variant={!isEditMode ? "contained" : "text"}
+              variant={isPreviewMode ? "contained" : "text"}
               sx={{ 
                 width: 80,
                 minWidth: 80,
-                bgcolor: !isEditMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                bgcolor: isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                visibility: isEditMode ? 'visible' : 'hidden',
                 '&:hover': {
-                  bgcolor: !isEditMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
+                  bgcolor: isPreviewMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
                 }
               }}
             >

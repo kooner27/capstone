@@ -19,6 +19,7 @@ export const NotebookProvider = ({ children }) => {
   
   // Edit state
   const [isEditMode, setIsEditMode] = useState(false)
+  const [isPreviewMode, setIsPreviewMode] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [editCanceled, setEditCanceled] = useState(false)
   const [originalNoteContent, setOriginalNoteContent] = useState('')
@@ -55,32 +56,46 @@ export const NotebookProvider = ({ children }) => {
     }
   }, [selectedNote])
 
-  // UI state management
-  const toggleEditMode = (save = false) => {
-    if (isEditMode) {
-      // Exiting edit mode
-      if (save && selectedNote && isDirty) {
-        // Save changes
-        updateNote(
-          selectedNotebook._id, 
-          selectedSection._id, 
-          selectedNote._id, 
-          selectedNote.title, 
-          selectedNote.content
-        )
-        // Update original content after saving
-        setOriginalNoteContent(selectedNote.content || '')
-        setIsDirty(false)
-      }
-    } else {
+  // Toggle edit mode - enter or exit edit mode
+  const toggleEditMode = () => {
+    if (!isEditMode) {
       // Entering edit mode - capture original content for potential cancel
       if (selectedNote) {
         // Store content at edit start time
         setEditStartContent(selectedNote.content || '')
         console.log('Edit start content captured:', selectedNote.content || '')
       }
+      setIsEditMode(true)
+      setIsPreviewMode(false) // Start in edit mode, not preview mode
+    } else {
+      // Exiting edit mode
+      setIsEditMode(false)
+      setIsPreviewMode(false) // Reset preview mode when exiting edit mode
     }
-    setIsEditMode(!isEditMode)
+  }
+
+  // Save content without exiting edit mode
+  const saveContent = () => {
+    if (selectedNote && isDirty) {
+      // Save changes
+      updateNote(
+        selectedNotebook._id, 
+        selectedSection._id, 
+        selectedNote._id, 
+        selectedNote.title, 
+        selectedNote.content
+      )
+      // Update original content after saving
+      setOriginalNoteContent(selectedNote.content || '')
+      setEditStartContent(selectedNote.content || '')
+      setIsDirty(false)
+      return true
+    }
+    return false
+  }
+
+  const togglePreviewMode = () => {
+    setIsPreviewMode(!isPreviewMode)
   }
 
   const cancelEdit = () => {
@@ -96,6 +111,7 @@ export const NotebookProvider = ({ children }) => {
     }
     
     setIsEditMode(false)
+    setIsPreviewMode(false)
     setIsDirty(false)
   }
 
@@ -127,14 +143,18 @@ export const NotebookProvider = ({ children }) => {
     
     // Edit state
     isEditMode,
+    isPreviewMode,
     isDirty,
     editCanceled,
     setEditCanceled,
     originalNoteContent,
     editStartContent,
+    setIsPreviewMode,
     
     // UI actions
     toggleEditMode,
+    saveContent,
+    togglePreviewMode,
     cancelEdit,
     updatePageContent,
     

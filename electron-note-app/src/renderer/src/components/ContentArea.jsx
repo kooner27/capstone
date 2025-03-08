@@ -168,10 +168,12 @@ const ContentArea = () => {
     selectedSection,
     selectedNote,
     isEditMode,
+    isPreviewMode,
     editCanceled,
     setEditCanceled,
     updatePageContent,
-    editStartContent
+    editStartContent,
+    setIsPreviewMode
   } = useNotebook();
 
   // Get loading, error, and data operations from NotebookDataContext
@@ -274,6 +276,18 @@ const ContentArea = () => {
       contentBuffer.current = '';
     }
   }, [isEditMode, updatePageContent]);
+
+  // Handle preview mode change
+  useEffect(() => {
+    if (isEditMode && !isPreviewMode) {
+      // When going from preview back to edit mode, restore content in editor
+      setTimeout(() => {
+        if (editableRef.current) {
+          editableRef.current.innerText = contentBuffer.current || selectedNote.content || '';
+        }
+      }, 0);
+    }
+  }, [isPreviewMode, isEditMode, selectedNote]);
 
   // Initialization when switching to edit mode
   useEffect(() => {
@@ -387,25 +401,32 @@ const ContentArea = () => {
         }}
       >
         {isEditMode ? (
-          <pre
-            ref={editableRef}
-            contentEditable
-            suppressContentEditableWarning={true}
-            onInput={handleInput}
-            onKeyDown={handleKeyDown}
-            onBlur={handleBlur}
-            style={{
-              minHeight: "100%",
-              outline: "none",
-              whiteSpace: "pre-wrap",
-              fontFamily: "monospace",
-              fontSize: "1rem",
-              lineHeight: "1.5",
-              padding: "8px 0", // Removed left/right padding
-              margin: 0
-            }}
-          />
+          isPreviewMode ? (
+            // Preview mode within edit mode - shows rendered markdown of current edits
+            <MarkdownRenderer markdown={contentBuffer.current || selectedNote.content || ''} />
+          ) : (
+            // Regular edit mode - shows editable text
+            <pre
+              ref={editableRef}
+              contentEditable
+              suppressContentEditableWarning={true}
+              onInput={handleInput}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              style={{
+                minHeight: "100%",
+                outline: "none",
+                whiteSpace: "pre-wrap",
+                fontFamily: "monospace",
+                fontSize: "1rem",
+                lineHeight: "1.5",
+                padding: "8px 0",
+                margin: 0
+              }}
+            />
+          )
         ) : (
+          // Regular view mode (not editing)
           <MarkdownRenderer markdown={selectedNote.content || ''} />
         )}
       </Box>
