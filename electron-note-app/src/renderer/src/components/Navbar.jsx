@@ -1,9 +1,12 @@
-import { AppBar, Toolbar, Typography, Button, TextField, IconButton, Box, Snackbar, Alert } from '@mui/material'
+import { AppBar, Toolbar, Typography, Button, TextField, IconButton, Box, Snackbar, Alert, Divider } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import { useNavigate } from 'react-router-dom'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import Import from './import-export/Import'
+import { jsPDF } from 'jspdf'
+import 'jspdf-autotable'
 
 const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate()
@@ -18,7 +21,15 @@ const Navbar = ({ toggleSidebar }) => {
     isPreviewMode,
     togglePreviewMode,
     setIsPreviewMode,
-    saveContent
+    saveContent,
+    exportData,
+    importData,
+    createImportedNote,
+    notebooks,
+    fetchNotebooks,
+    refreshSections,
+    createNotebook,
+    createSection
   } = useNotebook()
   
   const { updateNote } = useNotebookData()
@@ -73,7 +84,7 @@ const Navbar = ({ toggleSidebar }) => {
           <IconButton color="inherit" edge="start" onClick={toggleSidebar} sx={{ mr: 2 }}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" sx={{ flexGrow: 0.5 }}>
             TwoNote
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -132,7 +143,7 @@ const Navbar = ({ toggleSidebar }) => {
             flexGrow: 1, 
             display: 'flex', 
             justifyContent: 'center',
-            width: 300,
+            alignItems: 'center',
             mx: 2
           }}>
             <TextField
@@ -146,6 +157,8 @@ const Navbar = ({ toggleSidebar }) => {
               }}
             />
           </Box>
+          <Import />
+          <Divider orientation="vertical" flexItem sx={{ mx: 1, bgcolor: 'rgba(255, 255, 255, 0.3)' }} />
           <Button color="inherit" onClick={handleLogout}>Logout</Button>
         </Toolbar>
       </AppBar>
