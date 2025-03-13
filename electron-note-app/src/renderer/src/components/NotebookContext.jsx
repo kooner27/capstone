@@ -4,6 +4,7 @@ import {
   getSections, createSection,
   getNotes, createNote, updateNote
 } from '../api/notebook'
+import { useNotebookData } from './NotebookDataContext'
 
 const NotebookContext = createContext()
 
@@ -12,7 +13,11 @@ export const useNotebook = () => useContext(NotebookContext)
 export const NotebookProvider = ({ children }) => {
   // Get data operations from NotebookDataContext
   const { 
-    fetchNotebooks, fetchSections, fetchNotes, updateNote,
+    fetchNotebooks, fetchSections, fetchNotes, 
+    createNotebook: dataCreateNotebook,
+    createSection: dataCreateSection,
+    createNote: dataCreateNote,
+    updateNote: dataUpdateNote,
     notebooks, sections, notes, isLoading, error 
   } = useNotebookData()
   
@@ -56,6 +61,7 @@ export const NotebookProvider = ({ children }) => {
     if (selectedNote) {
       // Store original content for cancellation
       setOriginalNoteContent(selectedNote.content || '')
+      setEditStartContent(selectedNote.content || '')
       console.log('Original content set:', selectedNote.content || '')
     }
   }, [selectedNote])
@@ -128,48 +134,53 @@ export const NotebookProvider = ({ children }) => {
     }
   }
 
+  // Context value
+  const value = {
+    // Data from NotebookDataContext (read-only)
+    notebooks,
+    sections,
+    notes,
+    isLoading,
+    error,
+    
+    // Selection state
+    selectedNotebook,
+    setSelectedNotebook,
+    selectedSection,
+    setSelectedSection,
+    selectedNote, 
+    setSelectedNote,
+    
+    // Edit state
+    isEditMode,
+    isPreviewMode,
+    isDirty,
+    editCanceled,
+    setEditCanceled,
+    originalNoteContent,
+    editStartContent,
+    setIsPreviewMode,
+    
+    // UI actions
+    toggleEditMode,
+    saveContent,
+    togglePreviewMode,
+    cancelEdit,
+    updatePageContent,
+    
+    // Pass through data operations (for convenience)
+    updateNote: dataUpdateNote,
+    
+    // Add these for the Import component
+    refreshNotebooks: fetchNotebooks,
+    refreshSections: fetchSections,
+    createNotebook: dataCreateNotebook,
+    createSection: dataCreateSection,
+    createNote: dataCreateNote
+  }
+
   return (
-    <NotebookContext.Provider
-      value={{
-        // Data
-        notebooks,
-        sections,
-        notes,
-        // Selected items
-        selectedNotebook,
-        setSelectedNotebook,
-        selectedSection,
-        setSelectedSection,
-        selectedNote, 
-        setSelectedNote,
-        // UI state
-        isEditMode,
-        setIsEditMode,
-        isDirty,
-        setIsDirty,
-        editCanceled,
-        setEditCanceled,
-        isLoading,
-        error,
-        // Content tracking
-        originalNoteContent,
-        setOriginalNoteContent,
-        editStartContent,
-        // UI actions
-        toggleEditMode,
-        cancelEdit,
-        updatePageContent,
-        // CRUD operations
-        createNotebook: handleCreateNotebook,
-        createSection: handleCreateSection,
-        createNote: handleCreateNote,
-        updateNote: handleUpdateNote,
-        // Refetch methods
-        refreshNotebooks: fetchNotebooks,
-        refreshSections: (notebookId) => fetchSections(notebookId),
-        refreshNotes: (notebookId, sectionId) => fetchNotes(notebookId, sectionId)
-      }}
-    >
+    <NotebookContext.Provider value={value}>
       {children}
     </NotebookContext.Provider>
   )

@@ -30,7 +30,8 @@ const Import = () => {
     refreshSections,
     createNotebook,
     createSection,
-    createNote
+    createNote,
+    isLoading: contextLoading
   } = useNotebook()
 
   const [selectedFile, setSelectedFile] = useState(null)
