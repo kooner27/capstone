@@ -2,7 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import { 
   getUserNotebooks, createNotebook,
   getSections, createSection,
-  getNotes, createNote, updateNote
+  getNotes, createNote, updateNote,
+  exportNotebookData, importNotebookData
 } from '../api/notebook'
 
 const NotebookContext = createContext()
@@ -128,46 +129,101 @@ export const NotebookProvider = ({ children }) => {
     }
   }
 
-  // Context value
-  const value = {
-    // Data from NotebookDataContext (read-only)
-    notebooks,
-    sections,
-    notes,
-    isLoading,
-    error,
-    
-    // Selection state
-    selectedNotebook,
-    setSelectedNotebook,
-    selectedSection,
-    setSelectedSection,
-    selectedNote, 
-    setSelectedNote,
-    
-    // Edit state
-    isEditMode,
-    isPreviewMode,
-    isDirty,
-    editCanceled,
-    setEditCanceled,
-    originalNoteContent,
-    editStartContent,
-    setIsPreviewMode,
-    
-    // UI actions
-    toggleEditMode,
-    saveContent,
-    togglePreviewMode,
-    cancelEdit,
-    updatePageContent,
-    
-    // Pass through data operations (for convenience)
-    updateNote
-  }
-
   return (
-    <NotebookContext.Provider value={value}>
+    <NotebookContext.Provider
+      value={{
+        // Data
+        notebooks,
+        sections,
+        notes,
+        // Selected items
+        selectedNotebook,
+        setSelectedNotebook,
+        selectedSection,
+        setSelectedSection,
+        selectedNote, 
+        setSelectedNote,
+        // UI state
+        isEditMode,
+        setIsEditMode,
+        isDirty,
+        setIsDirty,
+        editCanceled,
+        setEditCanceled,
+        isLoading,
+        error,
+        // Content tracking
+        originalNoteContent,
+        setOriginalNoteContent,
+        editStartContent,
+        // UI actions
+        toggleEditMode,
+        cancelEdit,
+        updatePageContent,
+        // CRUD operations
+        createNotebook: handleCreateNotebook,
+        createSection: handleCreateSection,
+        createNote: handleCreateNote,
+        updateNote: handleUpdateNote,
+        // Refetch methods
+        refreshNotebooks: fetchNotebooks,
+        refreshSections: (notebookId) => fetchSections(notebookId),
+        refreshNotes: (notebookId, sectionId) => fetchNotes(notebookId, sectionId),
+        // API functions
+        fetchNotebooks,
+        handleCreateNotebook,
+        handleCreateSection,
+        handleCreateNote,
+        handleUpdateNote,
+        // Import/Export functions
+        exportData: async () => {
+          setIsLoading(true);
+          setError(null);
+          try {
+            const data = await exportNotebookData();
+            return data;
+          } catch (err) {
+            console.error('Error exporting data:', err);
+            setError(err.message);
+            return null;
+          } finally {
+            setIsLoading(false);
+          }
+        },
+        importData: async (markdownContent) => {
+          setIsLoading(true);
+          setError(null);
+          try {
+            // Just parse the markdown, don't create the note yet
+            const parsedData = await importNotebookData(markdownContent);
+            return parsedData;
+          } catch (err) {
+            console.error('Error parsing markdown:', err);
+            setError(err.message);
+            return { success: false, error: err.message };
+          } finally {
+            setIsLoading(false);
+          }
+        },
+        // Function to create a note from imported markdown
+        createImportedNote: async (notebookId, sectionId, title, content) => {
+          setIsLoading(true);
+          setError(null);
+          try {
+            const newNote = await createNote(notebookId, sectionId, title, content);
+            // Refresh notes after creating the new one
+            await fetchNotes(notebookId, sectionId);
+            return { success: true, note: newNote };
+          } catch (err) {
+            console.error('Error creating imported note:', err);
+            setError(err.message);
+            return { success: false, error: err.message };
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      }}
+    >
       {children}
     </NotebookContext.Provider>
   )
