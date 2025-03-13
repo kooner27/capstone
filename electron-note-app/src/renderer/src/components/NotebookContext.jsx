@@ -4,6 +4,7 @@ import {
   getSections, createSection,
   getNotes, createNote, updateNote
 } from '../api/notebook'
+import { useNotebookData } from './NotebookDataContext'
 
 const NotebookContext = createContext()
 
@@ -12,7 +13,11 @@ export const useNotebook = () => useContext(NotebookContext)
 export const NotebookProvider = ({ children }) => {
   // Get data operations from NotebookDataContext
   const { 
-    fetchNotebooks, fetchSections, fetchNotes, updateNote,
+    fetchNotebooks, fetchSections, fetchNotes, 
+    createNotebook: dataCreateNotebook,
+    createSection: dataCreateSection,
+    createNote: dataCreateNote,
+    updateNote: dataUpdateNote,
     notebooks, sections, notes, isLoading, error 
   } = useNotebookData()
   
@@ -56,6 +61,7 @@ export const NotebookProvider = ({ children }) => {
     if (selectedNote) {
       // Store original content for cancellation
       setOriginalNoteContent(selectedNote.content || '')
+      setEditStartContent(selectedNote.content || '')
       console.log('Original content set:', selectedNote.content || '')
     }
   }, [selectedNote])
@@ -163,7 +169,14 @@ export const NotebookProvider = ({ children }) => {
     updatePageContent,
     
     // Pass through data operations (for convenience)
-    updateNote
+    updateNote: dataUpdateNote,
+    
+    // Add these for the Import component
+    refreshNotebooks: fetchNotebooks,
+    refreshSections: fetchSections,
+    createNotebook: dataCreateNotebook,
+    createSection: dataCreateSection,
+    createNote: dataCreateNote
   }
 
   return (
