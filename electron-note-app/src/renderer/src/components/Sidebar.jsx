@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNotebook } from './NotebookContext'
+import { useNotebookData } from './NotebookDataContext'
 import {
   Box,
   Typography,
@@ -20,22 +21,27 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 
 const Sidebar = () => {
+  // Get selection state from NotebookContext
   const {
-    notebooks,
-    sections,
-    notes,
     selectedNotebook,
     setSelectedNotebook,
     selectedSection,
     setSelectedSection,
     selectedNote,
     setSelectedNote,
+  } = useNotebook()
+
+  // Get data and operations from NotebookDataContext
+  const {
+    notebooks,
+    sections,
+    notes,
     isLoading,
     error,
     createNotebook,
     createSection,
     createNote
-  } = useNotebook()
+  } = useNotebookData()
 
   // Dialog states
   const [isNotebookDialogOpen, setIsNotebookDialogOpen] = useState(false)
