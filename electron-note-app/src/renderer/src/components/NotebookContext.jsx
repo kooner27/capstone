@@ -1,5 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { useNotebookData } from './NotebookDataContext'
+import { 
+  getUserNotebooks, createNotebook,
+  getSections, createSection,
+  getNotes, createNote, updateNote,
+  exportNotebookData, importNotebookData
+} from '../api/notebook'
 
 const NotebookContext = createContext()
 
