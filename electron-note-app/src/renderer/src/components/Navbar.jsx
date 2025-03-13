@@ -1,8 +1,9 @@
-import { AppBar, Toolbar, Typography, Button, TextField, IconButton, Box, Snackbar, Alert } from '@mui/material'
+import { AppBar, Toolbar, Typography, Button, TextField, IconButton, Box, Snackbar, Alert, Divider } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import { useNavigate } from 'react-router-dom'
 import { useNotebook } from './NotebookContext'
 import { useState } from 'react'
+import Import from './import-export/Import'
 
 const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate()
@@ -138,6 +139,8 @@ const Navbar = ({ toggleSidebar }) => {
               }}
             />
           </Box>
+          <Import />
+          <Divider orientation="vertical" flexItem sx={{ mx: 1, bgcolor: 'rgba(255, 255, 255, 0.3)' }} />
           <Button color="inherit" onClick={handleLogout}>Logout</Button>
         </Toolbar>
       </AppBar>
