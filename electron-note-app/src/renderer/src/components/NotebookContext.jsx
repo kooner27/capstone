@@ -2,8 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import { 
   getUserNotebooks, createNotebook,
   getSections, createSection,
-  getNotes, createNote, updateNote,
-  exportNotebookData, importNotebookData
+  getNotes, createNote, updateNote
 } from '../api/notebook'
 
 const NotebookContext = createContext()
