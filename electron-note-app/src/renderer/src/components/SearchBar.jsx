@@ -12,10 +12,13 @@ import {
   Typography,
   Box,
   ClickAwayListener,
-  Chip
+  Chip,
+  Divider,
+  InputBase
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import ClearIcon from '@mui/icons-material/Clear'
+import LocalOfferIcon from '@mui/icons-material/LocalOffer'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import BookmarkBorderOutlinedIcon from '@mui/icons-material/BookmarkBorderOutlined'
@@ -23,7 +26,33 @@ import BookmarkBorderOutlinedIcon from '@mui/icons-material/BookmarkBorderOutlin
 const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [open, setOpen] = useState(false)
+  const [showTagDropdown, setShowTagDropdown] = useState(false)
+  const [tagSearchQuery, setTagSearchQuery] = useState('')
   const searchRef = useRef(null)
+
+  // Sample available tags
+  const availableTags = [
+    'work',
+    'personal',
+    'important',
+    'todo',
+    'meeting',
+    'idea',
+    'research',
+    'followup',
+    'archived',
+    'project',
+    'review',
+    'daily',
+    'weekly',
+    'development',
+    'planning',
+    'design',
+    'ui',
+    'feedback',
+    'bug',
+    'feature'
+  ]
 
   // Simplified flat list of dummy results
   const dummyResults = [
@@ -75,12 +104,27 @@ const SearchBar = () => {
 
   const handleInputChange = (e) => {
     setSearchQuery(e.target.value)
+    if (e.target.value !== '') {
+      setShowTagDropdown(false)
+    }
+  }
+
+  const handleTagSearchChange = (e) => {
+    setTagSearchQuery(e.target.value)
+  }
+
+  // Handle click on search field to show tags
+  const handleSearchClick = () => {
+    if (!open) {
+      setShowTagDropdown(true)
+    }
   }
 
   // Only search when Enter is pressed
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && searchQuery.trim() !== '') {
       setOpen(true)
+      setShowTagDropdown(false)
     }
   }
 
@@ -91,6 +135,7 @@ const SearchBar = () => {
 
   const handleClickAway = () => {
     setOpen(false)
+    setShowTagDropdown(false)
   }
 
   const renderIcon = (type) => {
@@ -117,6 +162,7 @@ const SearchBar = () => {
           fullWidth
           value={searchQuery}
           onChange={handleInputChange}
+          onClick={handleSearchClick}
           onKeyPress={handleKeyPress}
           sx={{
             backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -145,6 +191,85 @@ const SearchBar = () => {
           }}
         />
 
+        {/* Tag Dropdown */}
+        {showTagDropdown && !open && (
+          <Popper
+            open={true}
+            anchorEl={searchRef.current}
+            placement="bottom-start"
+            style={{
+              width: 400,
+              zIndex: 1500,
+              marginTop: '4px',
+              left: 0
+            }}
+          >
+            <Paper elevation={6} sx={{ maxHeight: 400, overflow: 'auto' }}>
+              <Box sx={{ p: 1.5, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
+                <Typography variant="subtitle2" display="flex" alignItems="center">
+                  <LocalOfferIcon sx={{ fontSize: '1rem', mr: 1 }} />
+                  Available Tags
+                </Typography>
+              </Box>
+
+              {/* Tag Search Input */}
+              <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
+                <InputBase
+                  placeholder="Add tags to search ..."
+                  value={tagSearchQuery}
+                  onChange={handleTagSearchChange}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                    </InputAdornment>
+                  }
+                  fullWidth
+                  sx={{
+                    fontSize: '0.875rem',
+                    py: 0.5,
+                    px: 1,
+                    borderRadius: 1,
+                    bgcolor: 'rgba(0, 0, 0, 0.05)'
+                  }}
+                />
+              </Box>
+
+              {/* Tag List */}
+              <Box
+                sx={{
+                  p: 1,
+                  maxHeight: 300,
+                  overflow: 'auto',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 0.5
+                }}
+              >
+                {availableTags.map((tag) => (
+                  <Chip
+                    key={tag}
+                    label={tag}
+                    size="small"
+                    sx={{
+                      m: 0.5,
+                      '&:hover': { bgcolor: 'primary.light', color: 'white' }
+                    }}
+                  />
+                ))}
+              </Box>
+
+              <Divider />
+
+              {/* <Box sx={{ p: 1.5 }}>
+                <Typography variant="body2" color="text.secondary">
+                add any tag filters above
+                </Typography>
+              </Box> */}
+            </Paper>
+          </Popper>
+        )}
+
+        {/* Search Results */}
         {open && searchQuery && (
           <Popper
             open={open}
