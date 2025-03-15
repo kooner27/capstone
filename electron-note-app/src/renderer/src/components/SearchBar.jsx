@@ -14,7 +14,8 @@ import {
   ClickAwayListener,
   Chip,
   Divider,
-  InputBase
+  InputBase,
+  CircularProgress
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import ClearIcon from '@mui/icons-material/Clear'
@@ -22,6 +23,7 @@ import LocalOfferIcon from '@mui/icons-material/LocalOffer'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import BookmarkBorderOutlinedIcon from '@mui/icons-material/BookmarkBorderOutlined'
+import { searchContent } from '../api/search'
 
 const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -30,7 +32,15 @@ const SearchBar = () => {
   const [tagSearchQuery, setTagSearchQuery] = useState('')
   const searchRef = useRef(null)
 
-  // Sample available tags
+  // state for api
+  const [loading, setLoading] = useState(false)
+  const [searchResults, setSearchResults] = useState(null)
+  const [error, setError] = useState(null)
+
+  // state for selected labels / tags
+  const [selectedLabels, setSelectedLabels] = useState([])
+
+  // Sample available tags, fetch them later
   const availableTags = [
     'work',
     'personal',
@@ -54,54 +64,6 @@ const SearchBar = () => {
     'feature'
   ]
 
-  // Simplified flat list of dummy results
-  const dummyResults = [
-    {
-      id: 'n1',
-      title: 'Project Ideas',
-      type: 'notebook',
-      preview: null
-    },
-    {
-      id: 's1',
-      title: 'Weekly Tasks',
-      type: 'section',
-      preview: null
-    },
-    {
-      id: 'note1',
-      title: 'Project Timeline Discussion',
-      type: 'note',
-      preview:
-        'We discussed the new project timeline and agreed to move the deadline to next quarter...'
-    },
-    {
-      id: 'n2',
-      title: 'Personal Journal',
-      type: 'notebook',
-      preview: null
-    },
-    {
-      id: 'note2',
-      title: 'Feature Requirements',
-      type: 'note',
-      preview:
-        'The client wants us to implement a new search functionality with filtering options...'
-    },
-    {
-      id: 's2',
-      title: 'Meeting Summaries',
-      type: 'section',
-      preview: null
-    },
-    {
-      id: 'note3',
-      title: 'Interview Questions',
-      type: 'note',
-      preview: 'Prepared questions for the senior developer position: 1) Experience with React...'
-    }
-  ]
-
   const handleInputChange = (e) => {
     setSearchQuery(e.target.value)
     if (e.target.value !== '') {
@@ -113,6 +75,22 @@ const SearchBar = () => {
     setTagSearchQuery(e.target.value)
   }
 
+  // handler for tag input enter
+  const handleTagSearchKeyPress = (e) => {
+    if (e.key === 'Enter' && tagSearchQuery.trim()) {
+      const tag = tagSearchQuery.trim().toLowerCase()
+      if (!selectedLabels.includes(tag)) {
+        setSelectedLabels([...selectedLabels, tag])
+      }
+      setTagSearchQuery('') // Clear input after adding
+    }
+  }
+
+  // remove tag handler
+  const handleRemoveTag = (tagToRemove) => {
+    setSelectedLabels(selectedLabels.filter((tag) => tag !== tagToRemove))
+  }
+
   // Handle click on search field to show tags
   const handleSearchClick = () => {
     if (!open) {
@@ -120,17 +98,34 @@ const SearchBar = () => {
     }
   }
 
-  // Only search when Enter is pressed
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && searchQuery.trim() !== '') {
-      setOpen(true)
+  // Search when Enter is pressed
+  const handleKeyPress = async (e) => {
+    if (e.key === 'Enter' && (searchQuery.trim() !== '' || selectedLabels.length > 0)) {
       setShowTagDropdown(false)
+      setLoading(true)
+      setError(null)
+
+      try {
+        // Include selectedLabels in search
+        const apiResults = await searchContent(searchQuery, selectedLabels)
+        console.log('API search results:', apiResults)
+        console.log('Used tags:', selectedLabels)
+        setSearchResults(apiResults)
+        setOpen(true)
+      } catch (error) {
+        console.error('Search API error:', error)
+        setError(error.message || 'Failed to search')
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
   const handleClearSearch = () => {
     setSearchQuery('')
+    setSelectedLabels([]) // Also clear selected tags
     setOpen(false)
+    setSearchResults(null)
   }
 
   const handleClickAway = () => {
@@ -149,6 +144,18 @@ const SearchBar = () => {
       default:
         return <DescriptionOutlinedIcon fontSize="small" />
     }
+  }
+
+  // Function to get combined results for display
+  const getAllResults = () => {
+    if (!searchResults || !searchResults.results) return []
+
+    // Combine all types of results
+    return [
+      ...(searchResults.results.notebooks || []),
+      ...(searchResults.results.sections || []),
+      ...(searchResults.results.notes || [])
+    ].sort((a, b) => (b.score || 0) - (a.score || 0))
   }
 
   return (
@@ -178,10 +185,14 @@ const SearchBar = () => {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'white' }} />
+                {loading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <SearchIcon sx={{ color: 'white' }} />
+                )}
               </InputAdornment>
             ),
-            endAdornment: searchQuery && (
+            endAdornment: (searchQuery || selectedLabels.length > 0) && (
               <InputAdornment position="end">
                 <IconButton size="small" onClick={handleClearSearch} sx={{ color: 'white' }}>
                   <ClearIcon fontSize="small" />
@@ -197,10 +208,18 @@ const SearchBar = () => {
             open={true}
             anchorEl={searchRef.current}
             placement="bottom-start"
+            modifiers={[
+              {
+                name: 'offset',
+                options: {
+                  offset: [-50, 10]
+                }
+              }
+            ]}
             style={{
               width: 400,
               zIndex: 1500,
-              marginTop: '4px',
+              marginTop: '10px',
               left: 0
             }}
           >
@@ -215,9 +234,10 @@ const SearchBar = () => {
               {/* Tag Search Input */}
               <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
                 <InputBase
-                  placeholder="Add tags to search ..."
+                  placeholder="Add tags to search... (Press Enter)"
                   value={tagSearchQuery}
                   onChange={handleTagSearchChange}
+                  onKeyPress={handleTagSearchKeyPress}
                   startAdornment={
                     <InputAdornment position="start">
                       <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
@@ -234,7 +254,32 @@ const SearchBar = () => {
                 />
               </Box>
 
-              {/* Tag List */}
+              {/* Selected Tags Display */}
+              {selectedLabels.length > 0 && (
+                <Box sx={{ p: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mb: 1 }}
+                  >
+                    Selected Tags:
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selectedLabels.map((label) => (
+                      <Chip
+                        key={label}
+                        label={label}
+                        size="small"
+                        onDelete={() => handleRemoveTag(label)}
+                        color="primary"
+                        sx={{ m: 0.5 }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Tag List  */}
               <Box
                 sx={{
                   p: 1,
@@ -260,21 +305,29 @@ const SearchBar = () => {
 
               <Divider />
 
-              {/* <Box sx={{ p: 1.5 }}>
+              <Box sx={{ p: 1.5 }}>
                 <Typography variant="body2" color="text.secondary">
-                add any tag filters above
+                  Type a tag and press Enter to add it to your search
                 </Typography>
-              </Box> */}
+              </Box>
             </Paper>
           </Popper>
         )}
 
-        {/* Search Results */}
-        {open && searchQuery && (
+        {/* Search Results  */}
+        {open && (
           <Popper
             open={open}
             anchorEl={searchRef.current}
             placement="bottom-start"
+            modifiers={[
+              {
+                name: 'offset',
+                options: {
+                  offset: [-50, 10]
+                }
+              }
+            ]}
             style={{
               width: 600,
               zIndex: 1500,
@@ -294,14 +347,42 @@ const SearchBar = () => {
           >
             <Paper elevation={6} sx={{ maxHeight: 500, overflow: 'auto' }}>
               <Box sx={{ p: 1.5, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-                <Typography variant="subtitle2">Results for "{searchQuery}"</Typography>
+                <Typography variant="subtitle2">
+                  {loading
+                    ? 'Searching...'
+                    : error
+                      ? `Error: ${error}`
+                      : searchResults
+                        ? `${searchResults.total_results} results${
+                            searchResults.query ? ` for "${searchResults.query}"` : ''
+                          }${
+                            selectedLabels.length > 0
+                              ? ` with tags: ${selectedLabels.join(', ')}`
+                              : ''
+                          }`
+                        : 'No results'}
+                </Typography>
               </Box>
 
               <List disablePadding>
-                {dummyResults.length > 0 ? (
-                  dummyResults.map((result) => (
+                {loading ? (
+                  <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : error ? (
+                  <ListItem>
+                    <ListItemText
+                      primary={`Error: ${error}`}
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        color: 'error'
+                      }}
+                    />
+                  </ListItem>
+                ) : getAllResults().length > 0 ? (
+                  getAllResults().map((result) => (
                     <ListItem
-                      key={result.id}
+                      key={result._id}
                       button
                       divider
                       sx={{
@@ -314,7 +395,7 @@ const SearchBar = () => {
                             {renderIcon(result.type)}
                           </ListItemIcon>
                           <Typography variant="subtitle2" noWrap>
-                            {result.title}
+                            {result.title || result.name}
                           </Typography>
                           <Chip
                             label={result.type}
@@ -334,7 +415,8 @@ const SearchBar = () => {
                           />
                         </Box>
 
-                        {result.preview && (
+                        {/* Display content preview for notes */}
+                        {result.content_preview && (
                           <Typography
                             variant="body2"
                             color="text.secondary"
@@ -348,8 +430,24 @@ const SearchBar = () => {
                               WebkitBoxOrient: 'vertical'
                             }}
                           >
-                            {result.preview}
+                            {result.content_preview}
                           </Typography>
+                        )}
+
+                        {/* Display labels if available */}
+                        {result.labels && result.labels.length > 0 && (
+                          <Box sx={{ pl: 4.5, mt: 0.5, display: 'flex', flexWrap: 'wrap' }}>
+                            {result.labels.map((label) => (
+                              <Chip
+                                key={label}
+                                label={label}
+                                size="small"
+                                color="default"
+                                variant="outlined"
+                                sx={{ mr: 0.5, mb: 0.5, height: 20, fontSize: '0.7rem' }}
+                              />
+                            ))}
+                          </Box>
                         )}
                       </Box>
                     </ListItem>
