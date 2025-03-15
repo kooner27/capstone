@@ -8,12 +8,17 @@ import jwt
 import datetime
 from functools import wraps
 from bson import ObjectId 
+from search import create_search_indexes, register_search_endpoint  # Import functions from search.py
+
+
 
 # Load environment variables from .env file
 load_dotenv()
 
+# initialize flask app
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
 
 # Flask configuration
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "your_secret_key")
@@ -26,6 +31,11 @@ users_collection = db["users"]
 notebooks_collection = db["notebooks"]
 sections_collection = db["sections"]
 notes_collection = db["notes"]
+
+# Create search indexes on startup
+create_search_indexes(db)
+# Register the search endpoint from search.py
+register_search_endpoint(app, notebooks_collection, sections_collection, notes_collection)
 
 # ------------------------------------------------------------------------------
 # API Status Endpoint
@@ -102,6 +112,7 @@ def create_notebook(user_id):
     notebook = {
         "user_id": user_id,
         "name": data.get("name", "Untitled Notebook"),
+        "labels": data.get("labels", []), 
         "created_at": datetime.datetime.utcnow(),
         "updated_at": datetime.datetime.utcnow()
     }
@@ -116,6 +127,9 @@ def update_notebook(user_id, notebook_id):
         "name": data.get("name"),
         "updated_at": datetime.datetime.utcnow()
     }
+    # Add labels if provided
+    if "labels" in data:
+        updated["labels"] = data.get("labels", [])
     result = notebooks_collection.update_one(
         {"_id": ObjectId(notebook_id), "user_id": user_id},
         {"$set": updated}
@@ -152,6 +166,7 @@ def create_section(user_id, notebook_id):
         "user_id": user_id,
         "notebook_id": notebook_id,
         "title": data.get("title", "New Section"),
+        "labels": data.get("labels", []), 
         "created_at": datetime.datetime.utcnow(),
         "updated_at": datetime.datetime.utcnow()
     }
@@ -166,6 +181,9 @@ def update_section(user_id, notebook_id, section_id):
         "title": data.get("title"),
         "updated_at": datetime.datetime.utcnow()
     }
+    # Add labels if provided
+    if "labels" in data:
+        updated["labels"] = data.get("labels", [])
     result = sections_collection.update_one(
         {"_id": ObjectId(section_id), "notebook_id": notebook_id, "user_id": user_id},
         {"$set": updated}
@@ -192,6 +210,21 @@ def get_notes(user_id, notebook_id, section_id):
         note["_id"] = str(note["_id"])
     return jsonify({"notes": notes}), 200
 
+# get a single note
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>/notes/<note_id>", methods=["GET"])
+def get_note(user_id, notebook_id, section_id, note_id):
+    note = notes_collection.find_one({
+        "_id": ObjectId(note_id), 
+        "section_id": section_id, 
+        "user_id": user_id
+    })
+    
+    if not note:
+        return jsonify({"message": "Note not found"}), 404
+        
+    note["_id"] = str(note["_id"])
+    return jsonify({"note": note}), 200
+
 @app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>/notes", methods=["POST"])
 def create_note(user_id, notebook_id, section_id):
     data = request.get_json()
@@ -215,9 +248,10 @@ def update_note(user_id, notebook_id, section_id, note_id):
     updated = {
         "title": data.get("title"),
         "content": data.get("content"),
-        "labels": data.get("labels", []),
         "updated_at": datetime.datetime.utcnow()
     }
+    if "labels" in data:
+        updated["labels"] = data.get("labels", [])
     result = notes_collection.update_one(
         {"_id": ObjectId(note_id), "section_id": section_id, "user_id": user_id},
         {"$set": updated}
@@ -234,6 +268,73 @@ def delete_note(user_id, notebook_id, section_id, note_id):
     if result.deleted_count == 0:
         return jsonify({"message": "Note not found"}), 404
     return jsonify({"message": "Note deleted successfully"}), 200
+
+    
+    # Add these new endpoints after your existing endpoints
+
+# ------------------------------------------------------------------------------
+# Label-Specific Update Endpoints
+# ------------------------------------------------------------------------------
+
+# Update notebook labels
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/labels", methods=["PATCH"])
+def update_notebook_labels(user_id, notebook_id):
+    data = request.get_json()
+    
+    if "labels" not in data:
+        return jsonify({"message": "Labels field is required"}), 400
+        
+    labels = data.get("labels", [])
+    
+    result = notebooks_collection.update_one(
+        {"_id": ObjectId(notebook_id), "user_id": user_id},
+        {"$set": {"labels": labels, "updated_at": datetime.datetime.utcnow()}}
+    )
+    
+    if result.matched_count == 0:
+        return jsonify({"message": "Notebook not found"}), 404
+        
+    return jsonify({"message": "Labels updated successfully"}), 200
+
+# Update section labels
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>/labels", methods=["PATCH"])
+def update_section_labels(user_id, notebook_id, section_id):
+    data = request.get_json()
+    
+    if "labels" not in data:
+        return jsonify({"message": "Labels field is required"}), 400
+        
+    labels = data.get("labels", [])
+    
+    result = sections_collection.update_one(
+        {"_id": ObjectId(section_id), "notebook_id": notebook_id, "user_id": user_id},
+        {"$set": {"labels": labels, "updated_at": datetime.datetime.utcnow()}}
+    )
+    
+    if result.matched_count == 0:
+        return jsonify({"message": "Section not found"}), 404
+        
+    return jsonify({"message": "Labels updated successfully"}), 200
+
+# Update note labels
+@app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>/notes/<note_id>/labels", methods=["PATCH"])
+def update_note_labels(user_id, notebook_id, section_id, note_id):
+    data = request.get_json()
+    
+    if "labels" not in data:
+        return jsonify({"message": "Labels field is required"}), 400
+        
+    labels = data.get("labels", [])
+    
+    result = notes_collection.update_one(
+        {"_id": ObjectId(note_id), "section_id": section_id, "user_id": user_id},
+        {"$set": {"labels": labels, "updated_at": datetime.datetime.utcnow()}}
+    )
+    
+    if result.matched_count == 0:
+        return jsonify({"message": "Note not found"}), 404
+        
+    return jsonify({"message": "Labels updated successfully"}), 200
 
 # ------------------------------------------------------------------------------
 # Run the Flask Application
