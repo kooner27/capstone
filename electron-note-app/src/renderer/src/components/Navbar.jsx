@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
 import { useState, useRef, useEffect } from 'react'
+import SearchBar from './SearchBar'
 import Import from './import-export/Import'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
@@ -94,9 +95,15 @@ const Navbar = ({ toggleSidebar }) => {
           <IconButton color="inherit" edge="start" onClick={toggleSidebar} sx={{ mr: 2 }}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 0.5 }}>
+          <Typography variant="h6" sx={{ mr: 2 }}>
             TwoNote
           </Typography>
+
+          {/* Added a spacer to move SearchBar right */}
+          <Box sx={{ flexGrow: 0.1 }} />
+          <SearchBar />
+
+          <Box sx={{ flexGrow: 0.3 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Button
               color="inherit"
@@ -147,26 +154,8 @@ const Navbar = ({ toggleSidebar }) => {
               View
             </Button>
           </Box>
-          <Box
-            sx={{
-              flexGrow: 1,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              mx: 2
-            }}
-          >
-            <TextField
-              variant="outlined"
-              placeholder="Search..."
-              size="small"
-              sx={{
-                backgroundColor: 'white',
-                borderRadius: 1,
-                width: 240
-              }}
-            />
-          </Box>
+          {/* box for space between edit and import/logout */}
+          <Box sx={{ flexGrow: 1 }} />
           <Import />
           <Divider
             orientation="vertical"
