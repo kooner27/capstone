@@ -3,9 +3,11 @@ import { Box, Typography, Button, CircularProgress } from '@mui/material'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
 
-// MarkdownRenderer component is unchanged
+// MarkdownRenderer component with debug logs
 const MarkdownRenderer = ({ markdown }) => {
-  // Markdown renderer code unchanged
+  console.log('[DEBUG-MARKDOWN] Rendering markdown with content:', 
+    markdown ? (markdown.length > 50 ? markdown.substring(0, 50) + '...' : markdown) : 'empty');
+
   const parseMarkdown = (text) => {
     const sections = []
     let currentText = ''
@@ -57,11 +59,41 @@ const MarkdownRenderer = ({ markdown }) => {
   }
   
   const formatText = (text) => {
+    // First, separate all content by paragraph blocks
     const paragraphs = text.split(/\n\n+/)
     
     return paragraphs.map(paragraph => {
+      // Check if this paragraph is a list before replacing newlines
+      const isList = paragraph.split('\n').some(line => line.trim().match(/^- /));
+      
+      if (isList) {
+        // Process as a list
+        const listItems = paragraph.split('\n')
+          .map(line => {
+            // Check if line is actually a list item
+            if (line.trim().match(/^- (.*)/)) {
+              // Extract the content after the dash
+              const content = line.trim().replace(/^- (.*)/, '$1');
+              return `<li>${content}</li>`;
+            }
+            // If it's not a list item but part of the list paragraph
+            // (like an introductory line before the list), wrap in a p tag
+            return line.trim() ? `<p>${line}</p>` : '';
+          })
+          .filter(item => item) // Remove empty lines
+          .join('');
+        
+        // If we found actual list items, wrap them in a ul
+        if (listItems.includes('<li>')) {
+          return `<ul>${listItems}</ul>`;
+        }
+        return listItems;
+      }
+      
+      // For non-list paragraphs, process as before
       let processedText = paragraph.replace(/\n/g, '<br>')
       
+      // Process formatting
       processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>')
       processedText = processedText.replace(/^# (.*?)$/gm, '<h1>$1</h1>')
@@ -69,12 +101,7 @@ const MarkdownRenderer = ({ markdown }) => {
       processedText = processedText.replace(/^### (.*?)$/gm, '<h3>$1</h3>')
       processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
       
-      if (processedText.match(/^- .*?(<br>- .*?)*$/)) {
-        processedText = processedText.replace(/<br>- /g, '- ')
-        processedText = processedText.replace(/^- (.*?)$/gm, '<li>$1</li>')
-        return '<ul>' + processedText + '</ul>'
-      }
-      
+      // Only wrap in paragraph if not already a heading
       if (!processedText.match(/^<h[1-3]>/) && 
           !processedText.match(/^<ul>/) && 
           !processedText.trim().startsWith('<li>')) {
@@ -136,7 +163,7 @@ const MarkdownRenderer = ({ markdown }) => {
       p { margin: 0 0 0.5em 0; }
       p:last-child { margin-bottom: 0; }
       h1, h2, h3 { margin-top: 0.8em; margin-bottom: 0.5em; }
-      ul { margin-top: 0.3em; margin-bottom: 0.5em; }
+      ul { margin-top: 0.3em; margin-bottom: 0.5em; padding-left: 1.5em; }
       li { margin-bottom: 0.2em; }
     `
     
@@ -162,6 +189,8 @@ const MarkdownRenderer = ({ markdown }) => {
 }
 
 const ContentArea = () => {
+  console.log('[DEBUG] ContentArea component rendering');
+  
   // Get selection and edit state from NotebookContext
   const { 
     selectedNotebook,
@@ -176,6 +205,16 @@ const ContentArea = () => {
     setIsPreviewMode
   } = useNotebook();
 
+  // Log what we have when rendering
+  console.log('[DEBUG] ContentArea current state:', {
+    hasSelectedNote: !!selectedNote,
+    noteId: selectedNote?._id, 
+    isEditMode, 
+    isPreviewMode,
+    editCanceled,
+    contentLength: selectedNote?.content?.length || 0
+  });
+
   // Get loading, error, and data operations from NotebookDataContext
   const {
     isLoading,
@@ -186,23 +225,35 @@ const ContentArea = () => {
   const editableRef = useRef(null);
   const contentBuffer = useRef(''); // Buffer to store content without re-rendering
   
-  // Handle edit cancellation
+  // Handle edit cancellation - FIXED VERSION
   useEffect(() => {
+    console.log('[DEBUG] editCanceled effect running, editCanceled =', editCanceled);
+    console.log('[DEBUG] Current editStartContent =', 
+      editStartContent ? (editStartContent.length > 50 ? editStartContent.substring(0, 50) + '...' : editStartContent) : 'empty');
+    
     if (editCanceled) {
-      console.log('Edit canceled detected, restoring original content:', editStartContent);
+      console.log('[DEBUG] Processing edit cancellation');
+      console.log('[DEBUG] Current isEditMode:', isEditMode);
+      console.log('[DEBUG] Current editableRef exists:', !!editableRef.current);
       
-      // Reset the editor directly with edit start content
+      // Reset the editor if we're still in edit mode
       if (editableRef.current && isEditMode) {
+        console.log('[DEBUG] Resetting editable content to editStartContent');
         editableRef.current.innerText = editStartContent;
+      } else {
+        console.log('[DEBUG] Not in edit mode, no need to reset editor');
       }
       
-      // When cancelling, update the content that will be displayed in view mode
-      updatePageContent(editStartContent);
-      contentBuffer.current = editStartContent;
+      // Clear the content buffer to avoid affecting content when switching modes
+      console.log('[DEBUG] Clearing contentBuffer');
+      contentBuffer.current = '';
       
+      console.log('[DEBUG] Resetting editCanceled flag');
       setEditCanceled(false);
+      
+      console.log('[DEBUG] Edit cancellation processing completed');
     }
-  }, [editCanceled, editStartContent, isEditMode, setEditCanceled, updatePageContent]);
+  }, [editCanceled, editStartContent, isEditMode, setEditCanceled]);
 
   // Handle Enter key for line breaks
   const handleKeyDown = (e) => {
@@ -257,21 +308,30 @@ const ContentArea = () => {
   // Update content when user types
   const handleInput = () => {
     if (editableRef.current) {
+      const content = editableRef.current.innerText || '';
+      console.log('[DEBUG] handleInput - content updated to:', 
+        content.length > 50 ? content.substring(0, 50) + '...' : content);
+      
       // Store content in a ref instead of updating state immediately
-      contentBuffer.current = editableRef.current.innerText || '';
+      contentBuffer.current = content;
     }
   };
 
   // Update state only when focus is lost
   const handleBlur = () => {
     if (contentBuffer.current) {
+      console.log('[DEBUG] handleBlur - updating page content with buffer:', 
+        contentBuffer.current.length > 50 ? contentBuffer.current.substring(0, 50) + '...' : contentBuffer.current);
       updatePageContent(contentBuffer.current);
     }
   };
 
   // Make sure content is saved when exiting edit mode
   useEffect(() => {
+    console.log('[DEBUG] isEditMode effect, isEditMode =', isEditMode, 'hasContentBuffer =', !!contentBuffer.current);
+    
     if (!isEditMode && contentBuffer.current) {
+      console.log('[DEBUG] Exiting edit mode with content in buffer, updating page content');
       updatePageContent(contentBuffer.current);
       contentBuffer.current = '';
     }
@@ -279,11 +339,19 @@ const ContentArea = () => {
 
   // Handle preview mode change
   useEffect(() => {
+    console.log('[DEBUG] Preview mode effect, isEditMode =', isEditMode, 'isPreviewMode =', isPreviewMode);
+    
     if (isEditMode && !isPreviewMode) {
+      console.log('[DEBUG] Going from preview back to edit mode');
       // When going from preview back to edit mode, restore content in editor
       setTimeout(() => {
         if (editableRef.current) {
-          editableRef.current.innerText = contentBuffer.current || selectedNote.content || '';
+          const content = contentBuffer.current || selectedNote?.content || '';
+          console.log('[DEBUG] Restoring editor content to:', 
+            content.length > 50 ? content.substring(0, 50) + '...' : content);
+          editableRef.current.innerText = content;
+        } else {
+          console.log('[DEBUG] Cannot restore editor content, editableRef.current is null');
         }
       }, 0);
     }
@@ -291,16 +359,21 @@ const ContentArea = () => {
 
   // Initialization when switching to edit mode
   useEffect(() => {
+    console.log('[DEBUG] Edit mode/selection change effect, isEditMode =', isEditMode, 'hasSelectedNote =', !!selectedNote);
+    
     if (isEditMode && editableRef.current && selectedNote) {
-      console.log('Initializing editor with content:', selectedNote.content);
+      const content = selectedNote.content || '';
+      console.log('[DEBUG] Initializing editor with content:', 
+        content.length > 50 ? content.substring(0, 50) + '...' : content);
       
       // Set the content correctly when entering edit mode
-      editableRef.current.innerText = selectedNote.content || '';
-      contentBuffer.current = selectedNote.content || '';
+      editableRef.current.innerText = content;
+      contentBuffer.current = content;
       
       // Focus and position cursor at end
       setTimeout(() => {
         if (editableRef.current) {
+          console.log('[DEBUG] Focusing editor and setting cursor position');
           editableRef.current.focus();
           
           const range = document.createRange();
@@ -311,6 +384,8 @@ const ContentArea = () => {
           
           selection.removeAllRanges();
           selection.addRange(range);
+        } else {
+          console.log('[DEBUG] Cannot focus editor, editableRef.current is null');
         }
       }, 10);
     }
@@ -343,6 +418,7 @@ const ContentArea = () => {
 
   // Loading state
   if (isLoading && !selectedNote) {
+    console.log('[DEBUG] Rendering loading state');
     return (
       <Box sx={{ 
         p: 3,
@@ -358,6 +434,7 @@ const ContentArea = () => {
 
   // Error state
   if (error) {
+    console.log('[DEBUG] Rendering error state:', error);
     return (
       <Box sx={{ p: 3 }}>
         <Typography color="error">Error: {error}</Typography>
@@ -370,6 +447,7 @@ const ContentArea = () => {
 
   // Welcome message when no note is selected
   if (!selectedNote) {
+    console.log('[DEBUG] Rendering welcome message (no note selected)');
     return (
       <Box sx={{ p: 3 }}>
         <Typography variant="h4">Welcome to TwoNote</Typography>
@@ -383,6 +461,11 @@ const ContentArea = () => {
       </Box>
     );
   }
+
+  // Log what we're about to render
+  console.log('[DEBUG] Rendering main content with mode:', isEditMode ? (isPreviewMode ? 'preview' : 'edit') : 'view');
+  console.log('[DEBUG] Note content for rendering:', 
+    selectedNote.content ? (selectedNote.content.length > 50 ? selectedNote.content.substring(0, 50) + '...' : selectedNote.content) : 'empty');
 
   // Main content area with note content
   return (

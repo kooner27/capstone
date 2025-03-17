@@ -125,23 +125,41 @@ export const NotebookDataProvider = ({ children }) => {
     }
   }
 
+  // MODIFIED: Enhanced updateNote with better logging
   const updateNote = async (notebookId, sectionId, noteId, title, content) => {
-    if (!notebookId || !sectionId || !noteId) return false
+    if (!notebookId || !sectionId || !noteId) {
+      console.error('Missing required parameters for updateNote:', { notebookId, sectionId, noteId });
+      return false;
+    }
     
-    setIsLoading(true)
-    setError(null)
+    // Add validation for content
+    if (content === undefined || content === null) {
+      console.error('Attempted to update note with undefined/null content');
+      return false;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      await apiUpdateNote(notebookId, sectionId, noteId, title, content)
+      console.log('Sending note update to API with content:', content);
+      
+      // Make the API call to update the note
+      await apiUpdateNote(notebookId, sectionId, noteId, title, content);
+      
+      // Update local state
       setNotes(prev => 
         prev.map(n => n._id === noteId ? { ...n, title, content } : n)
-      )
-      return true
+      );
+      
+      console.log('Note updated successfully');
+      return true;
     } catch (err) {
-      console.error('Error updating note:', err)
-      setError(err.message)
-      return false
+      console.error('Error updating note:', err);
+      setError(err.message);
+      return false;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
