@@ -50,34 +50,47 @@ const Import = () => {
     severity: 'success'
   })
 
-  const handleFileSelect = async () => {
-    try {
-      setIsLoading(true)
-      const result = await window.api.openFileDialog()
+// In Import.jsx, modify the handleFileSelect function:
+const handleFileSelect = async () => {
+  try {
+    setIsLoading(true)
+    const result = await window.api.openFileDialog()
 
-      if (result.success) {
-        setSelectedFile({ name: result.fileName })
-        setFileContent(result.content)
-        await handlePrepareLocationSelection()
-      } else if (result.error) {
-        setNotification({
-          open: true,
-          message: `Error opening file: ${result.error}`,
-          severity: 'error'
-        })
-      }
-    } catch (error) {
+    if (result.success) {
+      setSelectedFile({ name: result.fileName })
+      
+      // Fix the line breaks in the imported content
+      // This will normalize line endings and ensure proper spacing
+      const normalizedContent = result.content
+        .replace(/\r\n/g, '\n')  // Normalize Windows line endings
+        .replace(/\r/g, '\n')    // Normalize Mac line endings
+        .replace(/\n\n\n+/g, '\n\n')  // Remove excessive blank lines
+        .replace(/\n## /g, '\n\n## ')  // Ensure headings have a blank line before them
+        .replace(/\n### /g, '\n\n### ')  // Same for h3
+        .replace(/\n- /g, '\n\n- ')  // Ensure list items start with a blank line
+        .replace(/\n\n- /g, '\n\n- ');  // Avoid duplicate blank lines before lists
+      
+      setFileContent(normalizedContent)
+      await handlePrepareLocationSelection()
+    } else if (result.error) {
       setNotification({
         open: true,
-        message: `Error opening file: ${error.message}`,
+        message: `Error opening file: ${result.error}`,
         severity: 'error'
       })
-    } finally {
-      if (!openLocationDialog) {
-        setIsLoading(false)
-      }
+    }
+  } catch (error) {
+    setNotification({
+      open: true,
+      message: `Error opening file: ${error.message}`,
+      severity: 'error'
+    })
+  } finally {
+    if (!openLocationDialog) {
+      setIsLoading(false)
     }
   }
+}
 
   const handlePrepareLocationSelection = async () => {
     try {

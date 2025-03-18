@@ -96,9 +96,9 @@ const MarkdownRenderer = ({ markdown }) => {
       // Process formatting
       processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>')
-      processedText = processedText.replace(/^# (.*?)$/gm, '<h1>$1</h1>')
-      processedText = processedText.replace(/^## (.*?)$/gm, '<h2>$1</h2>')
-      processedText = processedText.replace(/^### (.*?)$/gm, '<h3>$1</h3>')
+      processedText = processedText.replace(/^#\s+(.*?)$/gm, '<h1>$1</h1>')
+      processedText = processedText.replace(/^##\s+(.*?)$/gm, '<h2>$1</h2>')
+      processedText = processedText.replace(/^###\s+(.*?)$/gm, '<h3>$1</h3>')
       processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
       
       // Only wrap in paragraph if not already a heading
