@@ -3,6 +3,87 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import fs from 'fs'
+import { spawn } from 'child_process' // Add this import
+
+// Add Python execution directly in main process
+function setupPythonHandlers(ipcMain) {
+  // Run Python code via direct process
+  ipcMain.handle('run-python', async (event, code) => {
+    try {
+      return await executePython(code);
+    } catch (error) {
+      console.error('Error executing Python:', error);
+      return {
+        error: error.message || 'Unknown error',
+        output: ''
+      };
+    }
+  });
+}
+
+// Execute Python code directly (no intermediate Node.js process)
+async function executePython(code) {
+  return new Promise((resolve, reject) => {
+    // Determine the Python command based on platform
+    const pythonCommand = process.platform === 'win32' ? 'python' : 'python3';
+    
+    // Launch Python in interactive mode (-i) and with unbuffered output (-u)
+    const pythonProcess = spawn(pythonCommand, ['-u']);
+    
+    let output = '';
+    let error = '';
+    
+    // Collect standard output
+    pythonProcess.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+    
+    // Collect error output
+    pythonProcess.stderr.on('data', (data) => {
+      error += data.toString();
+    });
+    
+    // Handle process completion
+    pythonProcess.on('close', (exitCode) => {
+      resolve({
+        output,
+        error,
+        exitCode
+      });
+    });
+    
+    // Handle process errors
+    pythonProcess.on('error', (err) => {
+      reject({
+        message: `Failed to start Python: ${err.message}`,
+        error: 'Could not start Python process. Is Python installed?'
+      });
+    });
+    
+    // Set a timeout to kill the process if it takes too long
+    const timeout = setTimeout(() => {
+      pythonProcess.kill();
+      reject({
+        message: 'Python execution timed out after 30 seconds',
+        error: 'Execution timed out'
+      });
+    }, 30000);
+    
+    // Clear the timeout when the process ends
+    pythonProcess.on('close', () => {
+      clearTimeout(timeout);
+    });
+    
+    // Write the code to the Python process
+    pythonProcess.stdin.write(code + '\n');
+    
+    // Send exit() command after a short delay to close the REPL
+    setTimeout(() => {
+      pythonProcess.stdin.write('\nexit()\n');
+      pythonProcess.stdin.end();
+    }, 1000);
+  });
+}
 
 function createWindow() {
   // Create the browser window.
@@ -88,6 +169,9 @@ app.whenReady().then(() => {
       }
     }
   })
+
+  // Add Python execution handlers
+  setupPythonHandlers(ipcMain)
 
   createWindow()
 

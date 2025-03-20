@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Box, Typography, Button, CircularProgress } from '@mui/material'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
+import CodeBlock from './CodeBlock' // Import the new CodeBlock component
 
-// MarkdownRenderer component with debug logs
+// MarkdownRenderer component with CodeBlock integration
 const MarkdownRenderer = ({ markdown }) => {
   console.log('[DEBUG-MARKDOWN] Rendering markdown with content:', 
     markdown ? (markdown.length > 50 ? markdown.substring(0, 50) + '...' : markdown) : 'empty');
@@ -112,50 +113,6 @@ const MarkdownRenderer = ({ markdown }) => {
     }).join('')
   }
   
-  const handleRunCode = (code) => {
-    alert(`Code execution result: ${code.slice(0, 50)}...`)
-  }
-  
-  const renderCodeBlock = (codeBlock, index) => {
-    return (
-      <Box key={`code-${index}`} sx={{ 
-        backgroundColor: '#282c34', 
-        color: '#abb2bf',
-        p: 2, 
-        my: 2, 
-        borderRadius: 1,
-        position: 'relative',
-        fontFamily: 'monospace',
-        whiteSpace: 'pre-wrap'
-      }}>
-        {codeBlock.language && (
-          <Typography variant="caption" sx={{ 
-            position: 'absolute', 
-            top: 0, 
-            right: 0, 
-            p: 1,
-            color: '#61afef'
-          }}>
-            {codeBlock.language}
-          </Typography>
-        )}
-        
-        <Typography component="pre" sx={{ m: 0, color: '#abb2bf' }}>
-          {codeBlock.content}
-        </Typography>
-        
-        <Button 
-          variant="contained" 
-          size="small" 
-          onClick={() => handleRunCode(codeBlock.content)}
-          sx={{ mt: 1 }}
-        >
-          Run
-        </Button>
-      </Box>
-    )
-  }
-  
   const renderTextBlock = (textBlock, index) => {
     const formattedHtml = formatText(textBlock.content)
     
@@ -181,7 +138,12 @@ const MarkdownRenderer = ({ markdown }) => {
     <Box>
       {sections.map((section, index) => 
         section.type === 'code' 
-          ? renderCodeBlock(section, index) 
+          ? <CodeBlock 
+              key={`code-${index}`}
+              code={section.content}
+              language={section.language}
+              index={index}
+            /> 
           : renderTextBlock(section, index)
       )}
     </Box>
