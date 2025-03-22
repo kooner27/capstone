@@ -1,7 +1,43 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import fs from 'fs'
+import path from 'path'
+
+// Function to handle opening the file dialog
+async function handleOpenFileDialog() {
+  try {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Markdown', extensions: ['md'] },
+        { name: 'Text Files', extensions: ['txt'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    })
+
+    if (canceled || filePaths.length === 0) {
+      return { success: false }
+    }
+
+    const filePath = filePaths[0]
+    const fileName = path.basename(filePath)
+    const content = fs.readFileSync(filePath, 'utf8')
+
+    return {
+      success: true,
+      fileName,
+      content
+    }
+  } catch (error) {
+    console.error('Error reading file:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+}
 
 function createWindow() {
   // Create the browser window.
@@ -56,6 +92,9 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+  
+  // Register the openFileDialog handler
+  ipcMain.handle('dialog:openFile', handleOpenFileDialog)
 
   createWindow()
 

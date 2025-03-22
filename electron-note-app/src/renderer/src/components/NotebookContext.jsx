@@ -9,7 +9,8 @@ export const NotebookProvider = ({ children }) => {
   // Get data operations from NotebookDataContext
   const { 
     fetchNotebooks, fetchSections, fetchNotes, updateNote,
-    notebooks, sections, notes, isLoading, error 
+    notebooks, sections, notes, isLoading, error,
+    createNotebook, createSection, createNote
   } = useNotebookData()
   
   // Selection state
@@ -55,6 +56,15 @@ export const NotebookProvider = ({ children }) => {
       console.log('Original content set:', selectedNote.content || '')
     }
   }, [selectedNote])
+
+  // Refresh functions for Import component
+  const refreshNotebooks = async () => {
+    return await fetchNotebooks()
+  }
+
+  const refreshSections = async (notebookId) => {
+    return await fetchSections(notebookId)
+  }
 
   // Toggle edit mode - enter or exit edit mode
   const toggleEditMode = () => {
@@ -158,8 +168,15 @@ export const NotebookProvider = ({ children }) => {
     cancelEdit,
     updatePageContent,
     
+    // Refresh functions for Import
+    refreshNotebooks,
+    refreshSections,
+    
     // Pass through data operations (for convenience)
-    updateNote
+    updateNote,
+    createNotebook,
+    createSection,
+    createNote
   }
 
   return (
