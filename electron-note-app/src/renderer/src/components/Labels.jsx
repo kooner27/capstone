@@ -14,14 +14,12 @@ import {
   Divider
 } from '@mui/material'
 import { updateNotebookLabels, updateSectionLabels, updateNoteLabels } from '../api/labels'
-// We need to update the labels array so our current state matches with the api
 
 const Labels = () => {
   const { fetchNotebooks, fetchSections, fetchNotes } = useNotebookData()
 
   const [open, setOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  setIsSaving
 
   // Input fields
   const [notebookLabelInput, setNotebookLabelInput] = useState('')
@@ -39,16 +37,60 @@ const Labels = () => {
     selectedSection,
     setSelectedSection,
     selectedNote,
-    setSelectedNote,
-    refreshSelectedEntities
+    setSelectedNote
   } = useNotebook()
 
-  const handleOpen = () => {
-    // Initialize local state from selected items
-    if (selectedNotebook) setNotebookLabels(selectedNotebook.labels || [])
-    if (selectedSection) setSectionLabels(selectedSection.labels || [])
-    if (selectedNote) setNoteLabels(selectedNote.labels || [])
-    setOpen(true)
+  const handleOpen = async () => {
+    try {
+      // Refresh data before opening to ensure we have latest labels
+      if (selectedNotebook) {
+        const freshNotebooks = await fetchNotebooks()
+        const freshNotebook = freshNotebooks.find((nb) => nb._id === selectedNotebook._id)
+
+        if (freshNotebook) {
+          // Update selected notebook with fresh data
+          setSelectedNotebook(freshNotebook)
+          setNotebookLabels(freshNotebook.labels || [])
+        } else {
+          setNotebookLabels(selectedNotebook.labels || [])
+        }
+      }
+
+      if (selectedSection && selectedNotebook) {
+        const freshSections = await fetchSections(selectedNotebook._id)
+        const freshSection = freshSections.find((s) => s._id === selectedSection._id)
+
+        if (freshSection) {
+          setSelectedSection(freshSection)
+          setSectionLabels(freshSection.labels || [])
+        } else {
+          setSectionLabels(selectedSection.labels || [])
+        }
+      }
+
+      if (selectedNote && selectedNotebook && selectedSection) {
+        const freshNotes = await fetchNotes(selectedNotebook._id, selectedSection._id)
+        const freshNote = freshNotes.find((n) => n._id === selectedNote._id)
+
+        if (freshNote) {
+          setSelectedNote(freshNote)
+          setNoteLabels(freshNote.labels || [])
+        } else {
+          setNoteLabels(selectedNote.labels || [])
+        }
+      }
+
+      setOpen(true)
+    } catch (error) {
+      console.error('Error refreshing data before opening labels dialog:', error)
+
+      // Fallback to current data if refresh fails
+      if (selectedNotebook) setNotebookLabels(selectedNotebook.labels || [])
+      if (selectedSection) setSectionLabels(selectedSection.labels || [])
+      if (selectedNote) setNoteLabels(selectedNote.labels || [])
+
+      setOpen(true)
+    }
   }
 
   const handleClose = () => {
@@ -70,11 +112,14 @@ const Labels = () => {
         console.log('Saving notebook labels:', notebookLabels)
         await updateNotebookLabels(selectedNotebook._id, notebookLabels)
 
-        // Update local state
-        setSelectedNotebook({
-          ...selectedNotebook,
-          labels: notebookLabels
-        })
+        // Refresh notebooks data and update selected notebook reference
+        const freshNotebooks = await fetchNotebooks()
+        const freshNotebook = freshNotebooks.find((nb) => nb._id === selectedNotebook._id)
+
+        if (freshNotebook) {
+          console.log('Updating selected notebook with fresh data:', freshNotebook)
+          setSelectedNotebook(freshNotebook)
+        }
       }
 
       // Update section labels
@@ -82,11 +127,16 @@ const Labels = () => {
         console.log('Saving section labels:', sectionLabels)
         await updateSectionLabels(selectedNotebook._id, selectedSection._id, sectionLabels)
 
-        // Update local state
-        setSelectedSection({
-          ...selectedSection,
-          labels: sectionLabels
-        })
+        // Refresh sections data and update selected section reference
+        if (selectedNotebook) {
+          const freshSections = await fetchSections(selectedNotebook._id)
+          const freshSection = freshSections.find((s) => s._id === selectedSection._id)
+
+          if (freshSection) {
+            console.log('Updating selected section with fresh data:', freshSection)
+            setSelectedSection(freshSection)
+          }
+        }
       }
 
       // Update note labels
@@ -99,11 +149,16 @@ const Labels = () => {
           noteLabels
         )
 
-        // Update local state
-        setSelectedNote({
-          ...selectedNote,
-          labels: noteLabels
-        })
+        // Refresh notes data and update selected note reference
+        if (selectedNotebook && selectedSection) {
+          const freshNotes = await fetchNotes(selectedNotebook._id, selectedSection._id)
+          const freshNote = freshNotes.find((n) => n._id === selectedNote._id)
+
+          if (freshNote) {
+            console.log('Updating selected note with fresh data:', freshNote)
+            setSelectedNote(freshNote)
+          }
+        }
       }
 
       // Close dialog after successful save
