@@ -19,8 +19,9 @@ import SearchBar from './SearchBar'
 import ImportExport from './import-export/ImportExport'
 
 const Navbar = ({ toggleSidebar }) => {
-  console.log('[DEBUG-NAVBAR] Navbar rendering');
-  
+  const DEBUG = false
+  DEBUG && console.log('[DEBUG-NAVBAR] Navbar rendering')
+
   const navigate = useNavigate()
   const {
     isEditMode,
@@ -46,13 +47,14 @@ const Navbar = ({ toggleSidebar }) => {
   } = useNotebook()
 
   // Log current state for debugging
-  console.log('[DEBUG-NAVBAR] Current state:', {
-    isEditMode,
-    isPreviewMode,
-    hasSelectedNote: !!selectedNote,
-    noteId: selectedNote?._id,
-    isDirty
-  });
+  DEBUG &&
+    console.log('[DEBUG-NAVBAR] Current state:', {
+      isEditMode,
+      isPreviewMode,
+      hasSelectedNote: !!selectedNote,
+      noteId: selectedNote?._id,
+      isDirty
+    })
 
   const { updateNote } = useNotebookData()
 
@@ -64,123 +66,146 @@ const Navbar = ({ toggleSidebar }) => {
   }
 
   const handleEditClick = () => {
-    console.log('[DEBUG-NAVBAR] Edit button clicked');
-    console.log('[DEBUG-NAVBAR] Current isEditMode:', isEditMode);
-    console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode);
-    
+    DEBUG && console.log('[DEBUG-NAVBAR] Edit button clicked')
+    DEBUG && console.log('[DEBUG-NAVBAR] Current isEditMode:', isEditMode)
+    DEBUG && console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode)
+
     if (isEditMode) {
       if (isPreviewMode) {
         // If we're in preview mode, go back to edit mode
-        console.log('[DEBUG-NAVBAR] Switching from preview mode to edit mode');
+        DEBUG && console.log('[DEBUG-NAVBAR] Switching from preview mode to edit mode')
         setIsPreviewMode(false)
       } else {
         // We're in edit mode but not preview mode
-        console.log('[DEBUG-NAVBAR] Exiting edit mode via toggleEditMode');
+        DEBUG && console.log('[DEBUG-NAVBAR] Exiting edit mode via toggleEditMode')
         toggleEditMode()
       }
     } else {
-      console.log('[DEBUG-NAVBAR] Entering edit mode via toggleEditMode');
+      DEBUG && console.log('[DEBUG-NAVBAR] Entering edit mode via toggleEditMode')
       toggleEditMode()
     }
   }
 
   // Enhanced save with debug logging
   const handleSaveClick = () => {
-    console.log('[DEBUG-NAVBAR] Save button clicked');
-    console.log('[DEBUG-NAVBAR] Current isEditMode:', isEditMode);
-    console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode);
-    console.log('[DEBUG-NAVBAR] Has selectedNote:', !!selectedNote);
-    
+    DEBUG && console.log('[DEBUG-NAVBAR] Save button clicked')
+    DEBUG && console.log('[DEBUG-NAVBAR] Current isEditMode:', isEditMode)
+    DEBUG && console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode)
+    DEBUG && console.log('[DEBUG-NAVBAR] Has selectedNote:', !!selectedNote)
+
     // First ensure we have the latest content from the editor
     if (selectedNote && isEditMode && !isPreviewMode) {
-      console.log('[DEBUG-NAVBAR] Attempting to capture current editor content');
-      
+      DEBUG && console.log('[DEBUG-NAVBAR] Attempting to capture current editor content')
+
       // Try to directly access the editable element to get absolutely current content
-      const editorElement = document.querySelector('[contenteditable=true]');
-      
+      const editorElement = document.querySelector('[contenteditable=true]')
+
       if (editorElement) {
         // Get the content directly from the DOM
-        const currentContent = editorElement.innerText || '';
-        console.log('[DEBUG-NAVBAR] Editor content captured for save:', 
-          currentContent.length > 50 ? currentContent.substring(0, 50) + '...' : currentContent);
-        
+        const currentContent = editorElement.innerText || ''
+        DEBUG &&
+          console.log(
+            '[DEBUG-NAVBAR] Editor content captured for save:',
+            currentContent.length > 50 ? currentContent.substring(0, 50) + '...' : currentContent
+          )
+
         // Compare with current note content
-        console.log('[DEBUG-NAVBAR] Current note content:', 
-          selectedNote.content ? (selectedNote.content.length > 50 ? selectedNote.content.substring(0, 50) + '...' : selectedNote.content) : 'empty');
-        
+        DEBUG &&
+          console.log(
+            '[DEBUG-NAVBAR] Current note content:',
+            selectedNote.content
+              ? selectedNote.content.length > 50
+                ? selectedNote.content.substring(0, 50) + '...'
+                : selectedNote.content
+              : 'empty'
+          )
+
         // Update the note with current content before saving
         if (currentContent !== selectedNote.content) {
-          console.log('[DEBUG-NAVBAR] Content changed, updating note with current editor content');
-          const updatedNote = { ...selectedNote, content: currentContent };
-          setSelectedNote(updatedNote);
+          DEBUG &&
+            console.log('[DEBUG-NAVBAR] Content changed, updating note with current editor content')
+          const updatedNote = { ...selectedNote, content: currentContent }
+          setSelectedNote(updatedNote)
         } else {
-          console.log('[DEBUG-NAVBAR] Content unchanged, no need to update note');
+          DEBUG && console.log('[DEBUG-NAVBAR] Content unchanged, no need to update note')
         }
       } else {
-        console.log('[DEBUG-NAVBAR] Could not find editable element');
+        DEBUG && console.log('[DEBUG-NAVBAR] Could not find editable element')
       }
-      
+
       // Now save with the updated note
-      console.log('[DEBUG-NAVBAR] Calling saveContent');
+      DEBUG && console.log('[DEBUG-NAVBAR] Calling saveContent')
       if (saveContent()) {
-        console.log('[DEBUG-NAVBAR] Save successful, showing message');
-        setShowSaveMessage(true);
+        DEBUG && console.log('[DEBUG-NAVBAR] Save successful, showing message')
+        setShowSaveMessage(true)
       } else {
-        console.log('[DEBUG-NAVBAR] Save failed');
+        DEBUG && console.log('[DEBUG-NAVBAR] Save failed')
       }
     } else {
       // Fallback to regular save
-      console.log('[DEBUG-NAVBAR] Using fallback save method');
+      DEBUG && console.log('[DEBUG-NAVBAR] Using fallback save method')
       if (saveContent()) {
-        console.log('[DEBUG-NAVBAR] Fallback save successful, showing message');
-        setShowSaveMessage(true);
+        DEBUG && console.log('[DEBUG-NAVBAR] Fallback save successful, showing message')
+        setShowSaveMessage(true)
       } else {
-        console.log('[DEBUG-NAVBAR] Fallback save failed');
+        DEBUG && console.log('[DEBUG-NAVBAR] Fallback save failed')
       }
     }
-  };
+  }
 
   const handleCancelClick = () => {
-    console.log('[DEBUG-NAVBAR] Cancel button clicked');
-    console.log('[DEBUG-NAVBAR] Current isEditMode:', isEditMode);
-    console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode);
-    console.log('[DEBUG-NAVBAR] Current selectedNote:', selectedNote?._id);
-    
+    DEBUG && console.log('[DEBUG-NAVBAR] Cancel button clicked')
+    DEBUG && console.log('[DEBUG-NAVBAR] Current isEditMode:', isEditMode)
+    DEBUG && console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode)
+    DEBUG && console.log('[DEBUG-NAVBAR] Current selectedNote:', selectedNote?._id)
+
     // Call cancelEdit and log the return value
-    console.log('[DEBUG-NAVBAR] Calling cancelEdit');
-    cancelEdit();
-    console.log('[DEBUG-NAVBAR] Returned from cancelEdit');
+    DEBUG && console.log('[DEBUG-NAVBAR] Calling cancelEdit')
+    cancelEdit()
+    DEBUG && console.log('[DEBUG-NAVBAR] Returned from cancelEdit')
   }
 
   const handleViewClick = () => {
-    console.log('[DEBUG-NAVBAR] View button clicked');
-    console.log('[DEBUG-NAVBAR] Current isEditMode:', isEditMode);
-    console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode);
-    
+    DEBUG && console.log('[DEBUG-NAVBAR] View button clicked')
+    DEBUG && console.log('[DEBUG-NAVBAR] Current isEditMode:', isEditMode)
+    DEBUG && console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode)
+
     if (isEditMode) {
       // Before switching to preview, make sure we capture latest content
-      console.log('[DEBUG-NAVBAR] Attempting to capture current content before preview');
-      const editorElement = document.querySelector('[contenteditable=true]');
+      DEBUG && console.log('[DEBUG-NAVBAR] Attempting to capture current content before preview')
+      const editorElement = document.querySelector('[contenteditable=true]')
       if (editorElement && selectedNote) {
-        const currentContent = editorElement.innerText || '';
-        console.log('[DEBUG-NAVBAR] Editor content captured:', 
-          currentContent.length > 50 ? currentContent.substring(0, 50) + '...' : currentContent);
-        
+        const currentContent = editorElement.innerText || ''
+        DEBUG &&
+          console.log(
+            '[DEBUG-NAVBAR] Editor content captured:',
+            currentContent.length > 50 ? currentContent.substring(0, 50) + '...' : currentContent
+          )
+
         if (currentContent !== selectedNote.content) {
-          console.log('[DEBUG-NAVBAR] Content changed, updating note with current editor content before preview');
-          const updatedNote = { ...selectedNote, content: currentContent };
-          setSelectedNote(updatedNote);
+          DEBUG &&
+            console.log(
+              '[DEBUG-NAVBAR] Content changed, updating note with current editor content before preview'
+            )
+          const updatedNote = { ...selectedNote, content: currentContent }
+          setSelectedNote(updatedNote)
         } else {
-          console.log('[DEBUG-NAVBAR] Content unchanged, no need to update before preview');
+          DEBUG && console.log('[DEBUG-NAVBAR] Content unchanged, no need to update before preview')
         }
       } else {
-        console.log('[DEBUG-NAVBAR] Could not capture content: editorElement exists =', !!editorElement, 'selectedNote exists =', !!selectedNote);
+        DEBUG &&
+          console.log(
+            '[DEBUG-NAVBAR] Could not capture content: editorElement exists =',
+            !!editorElement,
+            'selectedNote exists =',
+            !!selectedNote
+          )
       }
-      
-      console.log('[DEBUG-NAVBAR] Setting isPreviewMode to true');
-      setIsPreviewMode(true);
+
+      DEBUG && console.log('[DEBUG-NAVBAR] Setting isPreviewMode to true')
+      setIsPreviewMode(true)
     } else {
-      console.log('[DEBUG-NAVBAR] Not in edit mode, ignoring view button click');
+      DEBUG && console.log('[DEBUG-NAVBAR] Not in edit mode, ignoring view button click')
     }
   }
 

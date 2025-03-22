@@ -43,7 +43,8 @@ def search_all_content(user_id, query, notebooks_collection, sections_collection
         "name": 1,
         "labels": 1,
         "created_at": 1, 
-        "updated_at": 1
+        "updated_at": 1,
+        "user_id": 1
     }
     
     # Add text search if query provided
@@ -76,7 +77,8 @@ def search_all_content(user_id, query, notebooks_collection, sections_collection
         "labels": 1,
         "notebook_id": 1, 
         "created_at": 1, 
-        "updated_at": 1
+        "updated_at": 1,
+        "user_id": 1
     }
     
     # Add text search if query provided
@@ -113,7 +115,8 @@ def search_all_content(user_id, query, notebooks_collection, sections_collection
         "section_id": 1, 
         "notebook_id": 1, 
         "created_at": 1, 
-        "updated_at": 1
+        "updated_at": 1,
+        "user_id": 1,
     }
     
     # Add text search if query provided
