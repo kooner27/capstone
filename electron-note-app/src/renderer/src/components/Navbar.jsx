@@ -18,8 +18,6 @@ const Navbar = ({ toggleSidebar }) => {
     updateNote
   } = useNotebook()
   
-  const { updateNote } = useNotebookData()
-  
   const [showSaveMessage, setShowSaveMessage] = useState(false)
 
   const handleLogout = () => {
