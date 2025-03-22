@@ -28,7 +28,7 @@ const Sidebar = () => {
     selectedSection,
     setSelectedSection,
     selectedNote,
-    setSelectedNote,
+    setSelectedNote
   } = useNotebook()
 
   // Get data and operations from NotebookDataContext
@@ -105,11 +105,7 @@ const Sidebar = () => {
 
   const handleCreateNote = async () => {
     if (newItemName.trim() && selectedNotebook && selectedSection) {
-      const note = await createNote(
-        selectedNotebook._id, 
-        selectedSection._id, 
-        newItemName.trim()
-      )
+      const note = await createNote(selectedNotebook._id, selectedSection._id, newItemName.trim())
       if (note) {
         setSelectedNote(note)
       }
@@ -120,11 +116,11 @@ const Sidebar = () => {
   // Loading and error states
   if (isLoading && !notebooks.length) {
     return (
-      <Box 
-        sx={{ 
-          width: 240, 
-          display: 'flex', 
-          justifyContent: 'center', 
+      <Box
+        sx={{
+          width: 240,
+          display: 'flex',
+          justifyContent: 'center',
           alignItems: 'center',
           height: '100%'
         }}
@@ -136,9 +132,9 @@ const Sidebar = () => {
 
   if (error && !notebooks.length) {
     return (
-      <Box 
-        sx={{ 
-          width: 240, 
+      <Box
+        sx={{
+          width: 240,
           p: 2,
           display: 'flex',
           flexDirection: 'column',
@@ -159,11 +155,7 @@ const Sidebar = () => {
       <Box sx={{ width: 240, borderRight: 1, borderColor: 'divider' }}>
         <Toolbar sx={{ minHeight: 56, px: 2, justifyContent: 'space-between' }}>
           <Typography variant="h6">Notebooks</Typography>
-          <Button 
-            size="small" 
-            startIcon={<AddIcon />}
-            onClick={handleOpenNotebookDialog}
-          >
+          <Button size="small" startIcon={<AddIcon />} onClick={handleOpenNotebookDialog}>
             New
           </Button>
         </Toolbar>
@@ -173,18 +165,18 @@ const Sidebar = () => {
             <ListItem
               button
               key={notebook._id}
-              onClick={() => setSelectedNotebook(notebook)}
+              onClick={() => {
+                console.log('setting: notebook: ', notebook)
+                setSelectedNotebook(notebook)
+              }}
               sx={listItemStyles}
             >
-              <ListItemText 
-                primary={notebook.name}
-                primaryTypographyProps={{ noWrap: true }}
-              />
+              <ListItemText primary={notebook.name} primaryTypographyProps={{ noWrap: true }} />
             </ListItem>
           ))}
           {!notebooks.length && !isLoading && (
             <ListItem>
-              <ListItemText 
+              <ListItemText
                 primary="No notebooks found"
                 secondary="Create a notebook to get started"
               />
@@ -196,9 +188,7 @@ const Sidebar = () => {
         <Dialog open={isNotebookDialogOpen} onClose={handleCloseDialogs}>
           <DialogTitle>Create New Notebook</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              Enter a name for your new notebook:
-            </DialogContentText>
+            <DialogContentText>Enter a name for your new notebook:</DialogContentText>
             <TextField
               autoFocus
               margin="dense"
@@ -210,7 +200,9 @@ const Sidebar = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialogs}>Cancel</Button>
-            <Button onClick={handleCreateNotebook} variant="contained">Create</Button>
+            <Button onClick={handleCreateNotebook} variant="contained">
+              Create
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>
@@ -236,11 +228,7 @@ const Sidebar = () => {
               {selectedNotebook.name}
             </Typography>
           </Box>
-          <Button 
-            size="small" 
-            startIcon={<AddIcon />}
-            onClick={handleOpenSectionDialog}
-          >
+          <Button size="small" startIcon={<AddIcon />} onClick={handleOpenSectionDialog}>
             New
           </Button>
         </Toolbar>
@@ -257,20 +245,17 @@ const Sidebar = () => {
                 key={section._id}
                 selected={selectedSection && selectedSection._id === section._id}
                 onClick={() => {
-                  setSelectedSection(section);
-                  setSelectedNote(null);
+                  setSelectedSection(section)
+                  setSelectedNote(null)
                 }}
                 sx={listItemStyles}
               >
-                <ListItemText 
-                  primary={section.title}
-                  primaryTypographyProps={{ noWrap: true }}
-                />
+                <ListItemText primary={section.title} primaryTypographyProps={{ noWrap: true }} />
               </ListItem>
             ))}
             {!sections.length && !isLoading && (
               <ListItem>
-                <ListItemText 
+                <ListItemText
                   primary="No sections found"
                   secondary="Create a new section to get started"
                 />
@@ -283,9 +268,7 @@ const Sidebar = () => {
         <Dialog open={isSectionDialogOpen} onClose={handleCloseDialogs}>
           <DialogTitle>Create New Section</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              Enter a title for your new section:
-            </DialogContentText>
+            <DialogContentText>Enter a title for your new section:</DialogContentText>
             <TextField
               autoFocus
               margin="dense"
@@ -297,7 +280,9 @@ const Sidebar = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialogs}>Cancel</Button>
-            <Button onClick={handleCreateSection} variant="contained">Create</Button>
+            <Button onClick={handleCreateSection} variant="contained">
+              Create
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>
@@ -309,8 +294,8 @@ const Sidebar = () => {
             {selectedSection ? `${selectedSection.title}` : 'Select a section'}
           </Typography>
           {selectedSection && (
-            <Button 
-              size="small" 
+            <Button
+              size="small"
               startIcon={<AddIcon />}
               onClick={handleOpenNoteDialog}
               disabled={!selectedSection}
@@ -326,23 +311,21 @@ const Sidebar = () => {
           </Box>
         ) : (
           <List dense>
-            {selectedSection && notes.map((note) => (
-              <ListItem
-                button
-                key={note._id}
-                selected={selectedNote && selectedNote._id === note._id}
-                onClick={() => setSelectedNote(note)}
-                sx={listItemStyles}
-              >
-                <ListItemText 
-                  primary={note.title}
-                  primaryTypographyProps={{ noWrap: true }}
-                />
-              </ListItem>
-            ))}
+            {selectedSection &&
+              notes.map((note) => (
+                <ListItem
+                  button
+                  key={note._id}
+                  selected={selectedNote && selectedNote._id === note._id}
+                  onClick={() => setSelectedNote(note)}
+                  sx={listItemStyles}
+                >
+                  <ListItemText primary={note.title} primaryTypographyProps={{ noWrap: true }} />
+                </ListItem>
+              ))}
             {selectedSection && !notes.length && !isLoading && (
               <ListItem>
-                <ListItemText 
+                <ListItemText
                   primary="No notes found"
                   secondary="Create a new note to get started"
                 />
@@ -360,9 +343,7 @@ const Sidebar = () => {
         <Dialog open={isNoteDialogOpen} onClose={handleCloseDialogs}>
           <DialogTitle>Create New Note</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              Enter a title for your new note:
-            </DialogContentText>
+            <DialogContentText>Enter a title for your new note:</DialogContentText>
             <TextField
               autoFocus
               margin="dense"
@@ -374,7 +355,9 @@ const Sidebar = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialogs}>Cancel</Button>
-            <Button onClick={handleCreateNote} variant="contained">Create</Button>
+            <Button onClick={handleCreateNote} variant="contained">
+              Create
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>

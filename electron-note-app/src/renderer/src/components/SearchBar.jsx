@@ -24,6 +24,10 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import BookmarkBorderOutlinedIcon from '@mui/icons-material/BookmarkBorderOutlined'
 import { searchContent } from '../api/search'
+import { useNotebook } from './NotebookContext' // we will need to update the state on search result click
+import { getUserNotebooks, getSections, getNotes } from '../api/notebook'
+
+const DEBUG = false
 
 const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -63,6 +67,88 @@ const SearchBar = () => {
     'bug',
     'feature'
   ]
+  const { setSelectedNotebook, setSelectedSection, setSelectedNote } = useNotebook()
+
+  // Handle click on the search result
+  // We need to set the correct selection state based on what they clicked
+  // Fetch the notebook/section/note and set it
+  const handleResultClick = async (result) => {
+    DEBUG && console.log('Search result clicked:', result)
+    setOpen(false) // close the dropdown
+
+    try {
+      switch (result.type) {
+        case 'notebook':
+          // For notebooks, we can use the search result directly, since the objects are basically the same
+          setSelectedNotebook(result)
+          break
+
+        case 'section':
+          if (result.notebook_id) {
+            // First, fetch the complete notebook
+            DEBUG && console.log('Fetching parent notebook for section:', result.notebook_id)
+            const notebooks = await getUserNotebooks()
+            const notebook = notebooks.find((n) => n._id === result.notebook_id)
+
+            if (notebook) {
+              // Set notebook first
+              setSelectedNotebook(notebook)
+
+              // Wait for effects to complete before setting section
+              setTimeout(() => {
+                DEBUG && console.log('Setting section from search:', result)
+                setSelectedSection(result)
+              }, 100)
+            }
+          }
+          break
+
+        case 'note':
+          if (result.notebook_id && result.section_id) {
+            // First fetch the complete notebook
+            DEBUG && console.log('Fetching parent notebook for note:', result.notebook_id)
+            const notebooks = await getUserNotebooks()
+            const notebook = notebooks.find((n) => n._id === result.notebook_id)
+
+            if (notebook) {
+              // Set notebook first
+              setSelectedNotebook(notebook)
+
+              // Then fetch and set section after a delay
+              setTimeout(async () => {
+                DEBUG && console.log('Fetching parent section for note:', result.section_id)
+                const sections = await getSections(result.notebook_id)
+                const section = sections.find((s) => s._id === result.section_id)
+
+                if (section) {
+                  setSelectedSection(section)
+
+                  // Fetch all notes to get the complete note with full content
+                  setTimeout(async () => {
+                    DEBUG && console.log('Fetching notes to get complete note data')
+                    const completeNotes = await getNotes(notebook._id, section._id)
+                    const completeNote = completeNotes.find((n) => n._id === result._id)
+
+                    if (completeNote) {
+                      DEBUG && console.log('Setting complete note from API:', completeNote)
+                      setSelectedNote(completeNote)
+                    } else {
+                      DEBUG && console.log('Complete note not found, using search result:', result)
+                      setSelectedNote(result)
+                    }
+                  }, 100)
+                }
+              }, 100)
+            }
+          }
+          break
+        default:
+          console.warn('Unknown result type:', result.type)
+      }
+    } catch (error) {
+      console.error('Error navigating to search result:', error)
+    }
+  }
 
   const handleInputChange = (e) => {
     setSearchQuery(e.target.value)
@@ -108,8 +194,8 @@ const SearchBar = () => {
       try {
         // Include selectedLabels in search
         const apiResults = await searchContent(searchQuery, selectedLabels)
-        console.log('API search results:', apiResults)
-        console.log('Used tags:', selectedLabels)
+        DEBUG && console.log('API search results:', apiResults)
+        DEBUG && console.log('Used tags:', selectedLabels)
         setSearchResults(apiResults)
         setOpen(true)
       } catch (error) {
@@ -385,6 +471,7 @@ const SearchBar = () => {
                       key={result._id}
                       button
                       divider
+                      onClick={() => handleResultClick(result)} // result click handler
                       sx={{
                         '&:hover': { bgcolor: 'action.hover' }
                       }}
