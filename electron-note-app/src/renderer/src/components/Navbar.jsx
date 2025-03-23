@@ -16,9 +16,7 @@ import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
 import { useState, useRef, useEffect } from 'react'
 import SearchBar from './SearchBar'
-import Import from './import-export/Import'
-import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import ImportExport from './import-export/ImportExport'
 
 const Navbar = ({ toggleSidebar }) => {
   console.log('[DEBUG-NAVBAR] Navbar rendering');
@@ -258,7 +256,7 @@ const Navbar = ({ toggleSidebar }) => {
           </Box>
           {/* box for space between edit and import/logout */}
           <Box sx={{ flexGrow: 1 }} />
-          <Import />
+          <ImportExport />
           <Divider
             orientation="vertical"
             flexItem
