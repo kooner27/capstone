@@ -3,32 +3,408 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import fs from 'fs'
-import { spawn } from 'child_process' // Add this import
+import { spawn } from 'child_process'
+import path from 'path'
+import os from 'os'
 
-// Add Python execution directly in main process
-function setupPythonHandlers(ipcMain) {
-  // Run Python code via direct process
-  ipcMain.handle('run-python', async (event, code) => {
-    try {
-      return await executePython(code);
-    } catch (error) {
-      console.error('Error executing Python:', error);
-      return {
-        error: error.message || 'Unknown error',
-        output: ''
-      };
+// Define constants for virtual environment
+const APP_DATA_DIR = path.join(os.homedir(), '.twonote');
+const VENV_DIR = path.join(APP_DATA_DIR, 'venv');
+
+// Ensure app data directory exists
+function ensureAppDataDir() {
+  if (!fs.existsSync(APP_DATA_DIR)) {
+    fs.mkdirSync(APP_DATA_DIR, { recursive: true });
+  }
+  return APP_DATA_DIR;
+}
+
+// Check Python installation
+async function checkPythonInstallation() {
+  try {
+    // Determine commands based on platform
+    const pythonCommands = process.platform === 'win32' 
+      ? ['python', 'py'] 
+      : ['python3', 'python'];
+    const pipCommands = process.platform === 'win32'
+      ? ['pip', 'pip3']
+      : ['pip3', 'pip'];
+    
+    // Try different Python commands
+    let pythonResult = { installed: false, version: '' };
+    
+    for (const cmd of pythonCommands) {
+      try {
+        const { stdout } = await execCommand(`${cmd} --version`);
+        // Parse version from output (usually in format "Python X.Y.Z")
+        const versionMatch = stdout.toString().match(/Python\s+(\d+\.\d+\.\d+)/i);
+        pythonResult = {
+          installed: true,
+          version: versionMatch ? versionMatch[1] : stdout.toString().trim()
+        };
+        break; // Found working Python command
+      } catch (err) {
+        // Try next command
+        continue;
+      }
     }
+    
+    // Try different pip commands
+    let pipResult = { installed: false, version: '' };
+    
+    for (const cmd of pipCommands) {
+      try {
+        const { stdout } = await execCommand(`${cmd} --version`);
+        // Parse version from output (usually in format "pip X.Y.Z from /path")
+        const versionMatch = stdout.toString().match(/pip\s+(\d+\.\d+(\.\d+)?)/i);
+        pipResult = {
+          installed: true,
+          version: versionMatch ? versionMatch[1] : stdout.toString().trim()
+        };
+        break; // Found working pip command
+      } catch (err) {
+        // Try next command
+        continue;
+      }
+    }
+    
+    return {
+      python: pythonResult,
+      pip: pipResult
+    };
+  } catch (error) {
+    console.error('Error checking Python installation:', error);
+    return {
+      error: error.message,
+      python: { installed: false },
+      pip: { installed: false }
+    };
+  }
+}
+
+// Helper function to execute shell commands
+function execCommand(command) {
+  return new Promise((resolve, reject) => {
+    const childProcess = spawn(command, { shell: true });
+    let stdout = '';
+    let stderr = '';
+    
+    childProcess.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+    
+    childProcess.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    
+    childProcess.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        reject(new Error(`Command failed with code ${code}: ${stderr}`));
+      }
+    });
+    
+    childProcess.on('error', (err) => {
+      reject(err);
+    });
   });
 }
 
-// Execute Python code directly (no intermediate Node.js process)
-async function executePython(code) {
-  return new Promise((resolve, reject) => {
-    // Determine the Python command based on platform
-    const pythonCommand = process.platform === 'win32' ? 'python' : 'python3';
+// Check if virtual environment exists
+async function checkVenvExists() {
+  try {
+    ensureAppDataDir();
     
-    // Launch Python in interactive mode (-i) and with unbuffered output (-u)
-    const pythonProcess = spawn(pythonCommand, ['-u']);
+    // Check if venv directory exists
+    const venvExists = fs.existsSync(VENV_DIR);
+    
+    // If venv exists, check if it has a Python interpreter
+    let hasInterpreter = false;
+    if (venvExists) {
+      const interpreterPath = getVenvPythonPath();
+      hasInterpreter = fs.existsSync(interpreterPath);
+    }
+    
+    return {
+      exists: venvExists && hasInterpreter,
+      path: VENV_DIR
+    };
+  } catch (error) {
+    console.error('Error checking venv:', error);
+    return {
+      exists: false,
+      error: error.message
+    };
+  }
+}
+
+// Get Python path inside virtual environment
+function getVenvPythonPath() {
+  if (process.platform === 'win32') {
+    return path.join(VENV_DIR, 'Scripts', 'python.exe');
+  } else {
+    return path.join(VENV_DIR, 'bin', 'python');
+  }
+}
+
+// Create virtual environment
+async function createVirtualEnvironment() {
+  try {
+    ensureAppDataDir();
+    
+    // Check if venv already exists
+    const venvCheck = await checkVenvExists();
+    if (venvCheck.exists) {
+      return {
+        success: true,
+        message: 'Virtual environment already exists'
+      };
+    }
+    
+    // Check Python installation
+    const pyCheck = await checkPythonInstallation();
+    if (!pyCheck.python.installed) {
+      return {
+        success: false,
+        error: 'Python is not installed'
+      };
+    }
+    
+    // Determine Python command
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    
+    // Create virtual environment
+    const createCmd = `${pythonCmd} -m venv "${VENV_DIR}"`;
+    await execCommand(createCmd);
+    
+    // Verify creation
+    const verifyCheck = await checkVenvExists();
+    
+    return {
+      success: verifyCheck.exists,
+      message: verifyCheck.exists 
+        ? 'Virtual environment created successfully' 
+        : 'Failed to create virtual environment'
+    };
+  } catch (error) {
+    console.error('Error creating venv:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Install packages from requirements.txt
+// Enhanced installRequirements function with build error handling
+async function installRequirements(requirementsPath) {
+  try {
+    // Check if venv exists
+    const venvCheck = await checkVenvExists();
+    if (!venvCheck.exists) {
+      // Try to create it
+      const createResult = await createVirtualEnvironment();
+      if (!createResult.success) {
+        return {
+          success: false,
+          error: `Could not create virtual environment: ${createResult.error}`
+        };
+      }
+    }
+    
+    // Get pip and python paths
+    const pythonPath = process.platform === 'win32'
+      ? path.join(VENV_DIR, 'Scripts', 'python.exe')
+      : path.join(VENV_DIR, 'bin', 'python');
+    
+    const pipPath = process.platform === 'win32'
+      ? path.join(VENV_DIR, 'Scripts', 'pip.exe')
+      : path.join(VENV_DIR, 'bin', 'pip');
+    
+    // Setup phase: Fix common issues that prevent installation
+    let setupLog = [];
+    
+    // Step 1: Ensure basic build tools are installed first
+    setupLog.push('Installing essential build tools...');
+    
+    try {
+      await execCommand(`"${pythonPath}" -m pip install --upgrade pip setuptools wheel`);
+      setupLog.push('Successfully installed essential build tools');
+    } catch (error) {
+      setupLog.push(`Warning: Failed to install build tools: ${error.message}`);
+    }
+    
+    // Read requirements file to understand what we need to install
+    const requirements = fs.readFileSync(requirementsPath, 'utf8');
+    const packageLines = requirements.split('\n')
+      .map(line => line.trim())
+      .filter(line => line && !line.startsWith('#'));
+    
+    setupLog.push(`Found ${packageLines.length} packages to install`);
+    
+    // Identify scientific packages that often need special handling
+    const scientificPackages = packageLines.filter(line => 
+      line.startsWith('numpy') || 
+      line.startsWith('scipy') || 
+      line.startsWith('pandas') || 
+      line.startsWith('matplotlib') ||
+      line.startsWith('scikit-learn')
+    );
+    
+    // Try different installation strategies
+    let installSuccess = false;
+    let installError = '';
+    let installOutput = '';
+    
+    // Strategy 1: Try installing with --only-binary option for scientific packages
+    if (scientificPackages.length > 0) {
+      setupLog.push('Strategy 1: Installing scientific packages with pre-compiled binaries...');
+      try {
+        // Install scientific packages separately with --only-binary
+        for (const pkg of scientificPackages) {
+          setupLog.push(`Installing ${pkg} with binary option...`);
+          await execCommand(`"${pipPath}" install --only-binary=:all: ${pkg}`);
+          setupLog.push(`Successfully installed ${pkg}`);
+        }
+        
+        // Remove scientific packages from the main list
+        const remainingPackages = packageLines.filter(pkg => !scientificPackages.includes(pkg));
+        
+        if (remainingPackages.length > 0) {
+          setupLog.push(`Installing ${remainingPackages.length} remaining packages...`);
+          // Install the rest of the packages
+          await execCommand(`"${pipPath}" install ${remainingPackages.join(' ')}`);
+          setupLog.push('Successfully installed all remaining packages');
+        }
+        
+        installSuccess = true;
+      } catch (error) {
+        setupLog.push(`Strategy 1 failed: ${error.message}`);
+        installError = error.message;
+      }
+    }
+    
+    // Strategy 2: If strategy 1 failed or wasn't attempted, try with --prefer-binary flag
+    if (!installSuccess) {
+      setupLog.push('Strategy 2: Installing all packages with prefer-binary option...');
+      try {
+        await execCommand(`"${pipPath}" install --prefer-binary -r "${requirementsPath}"`);
+        setupLog.push('Strategy 2 succeeded: All packages installed with prefer-binary option');
+        installSuccess = true;
+      } catch (error) {
+        setupLog.push(`Strategy 2 failed: ${error.message}`);
+        installError = error.message;
+      }
+    }
+    
+    // Strategy 3: If previous strategies failed, try installing packages one by one
+    if (!installSuccess) {
+      setupLog.push('Strategy 3: Installing packages individually...');
+      
+      let successPackages = [];
+      let failedPackages = [];
+      
+      for (const pkg of packageLines) {
+        setupLog.push(`Installing ${pkg}...`);
+        try {
+          // Try with --prefer-binary first
+          await execCommand(`"${pipPath}" install --prefer-binary ${pkg}`);
+          successPackages.push(pkg);
+          setupLog.push(`Successfully installed ${pkg}`);
+        } catch (firstError) {
+          // If that fails, try without any options
+          try {
+            setupLog.push(`Retrying ${pkg} without options...`);
+            await execCommand(`"${pipPath}" install ${pkg}`);
+            successPackages.push(pkg);
+            setupLog.push(`Successfully installed ${pkg} without options`);
+          } catch (secondError) {
+            // As a last resort, try with --no-deps flag
+            try {
+              setupLog.push(`Trying ${pkg} with --no-deps flag...`);
+              await execCommand(`"${pipPath}" install --no-deps ${pkg}`);
+              successPackages.push(`${pkg} (without dependencies)`);
+              setupLog.push(`Installed ${pkg} without dependencies`);
+            } catch (thirdError) {
+              failedPackages.push(pkg);
+              setupLog.push(`Failed to install ${pkg}: ${thirdError.message}`);
+            }
+          }
+        }
+      }
+      
+      if (successPackages.length > 0) {
+        setupLog.push(`Successfully installed ${successPackages.length} out of ${packageLines.length} packages`);
+        installSuccess = true;
+        if (failedPackages.length > 0) {
+          installError = `Failed to install ${failedPackages.length} package(s): ${failedPackages.join(', ')}`;
+        }
+      } else {
+        setupLog.push('Failed to install any packages');
+        installSuccess = false;
+        installError = 'Could not install any packages using any strategy';
+      }
+    }
+    
+    // Compile the full log and return results
+    installOutput = setupLog.join('\n');
+    
+    return {
+      success: installSuccess,
+      output: installOutput,
+      error: installError,
+      partial: installSuccess && installError !== ''
+    };
+  } catch (error) {
+    console.error('Error in installation process:', error);
+    return {
+      success: false,
+      error: `Installation process error: ${error.message}`,
+      output: `An error occurred in the installation process: ${error.message}`
+    };
+  }
+}
+
+
+// Execute Python code directly (enhanced to use venv)
+// Execute Python code with better environment setup
+async function executePython(code, useVenv = true) {
+  return new Promise((resolve, reject) => {
+    // Determine which Python to use
+    let pythonCommand;
+    let pythonEnv = { ...process.env };
+    
+    if (useVenv) {
+      // Use virtual environment Python if available
+      pythonCommand = getVenvPythonPath();
+      
+      // Check if it exists
+      if (!fs.existsSync(pythonCommand)) {
+        // Fall back to system Python
+        pythonCommand = process.platform === 'win32' ? 'python' : 'python3';
+        console.log('Virtual environment Python not found, falling back to system Python');
+      } else {
+        // Set environment variables for the virtual environment
+        if (process.platform === 'win32') {
+          // For Windows
+          pythonEnv.PATH = `${path.dirname(pythonCommand)};${pythonEnv.PATH}`;
+          pythonEnv.VIRTUAL_ENV = VENV_DIR;
+        } else {
+          // For macOS/Linux
+          pythonEnv.PATH = `${path.dirname(pythonCommand)}:${pythonEnv.PATH}`;
+          pythonEnv.VIRTUAL_ENV = VENV_DIR;
+        }
+      }
+    } else {
+      // Use system Python
+      pythonCommand = process.platform === 'win32' ? 'python' : 'python3';
+    }
+    
+    console.log(`Using Python command: ${pythonCommand}`);
+    
+    // Launch Python with the appropriate environment
+    const pythonProcess = spawn(pythonCommand, ['-u'], { env: pythonEnv });
     
     let output = '';
     let error = '';
@@ -85,6 +461,105 @@ async function executePython(code) {
   });
 }
 
+// Select requirements.txt file
+async function selectRequirementsFile() {
+  try {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Requirements File', extensions: ['txt'] }
+      ],
+      title: 'Select requirements.txt File'
+    });
+    
+    if (canceled || filePaths.length === 0) {
+      return {
+        canceled: true
+      };
+    }
+    
+    const filePath = filePaths[0];
+    const fileName = path.basename(filePath);
+    
+    return {
+      canceled: false,
+      filePath,
+      fileName
+    };
+  } catch (error) {
+    console.error('Error selecting requirements file:', error);
+    return {
+      error: error.message
+    };
+  }
+}
+
+// Setup handlers for Python functionality
+function setupPythonHandlers(ipcMain) {
+  // Check Python installation
+  ipcMain.handle('checkPythonInstallation', async () => {
+    try {
+      return await checkPythonInstallation();
+    } catch (error) {
+      console.error('Error in checkPythonInstallation handler:', error);
+      return { error: error.message };
+    }
+  });
+  
+  // Check virtual environment status
+  ipcMain.handle('checkVenvStatus', async () => {
+    try {
+      return await checkVenvExists();
+    } catch (error) {
+      console.error('Error in checkVenvStatus handler:', error);
+      return { error: error.message };
+    }
+  });
+  
+  // Create virtual environment
+  ipcMain.handle('createVenv', async () => {
+    try {
+      return await createVirtualEnvironment();
+    } catch (error) {
+      console.error('Error in createVenv handler:', error);
+      return { error: error.message };
+    }
+  });
+  
+  // Select requirements.txt file
+  ipcMain.handle('selectRequirementsFile', async () => {
+    try {
+      return await selectRequirementsFile();
+    } catch (error) {
+      console.error('Error in selectRequirementsFile handler:', error);
+      return { error: error.message };
+    }
+  });
+  
+  // Install requirements
+  ipcMain.handle('installRequirements', async (event, requirementsPath) => {
+    try {
+      return await installRequirements(requirementsPath);
+    } catch (error) {
+      console.error('Error in installRequirements handler:', error);
+      return { error: error.message };
+    }
+  });
+  
+  // Run Python code
+  ipcMain.handle('runPython', async (event, code, useVenv = true) => {
+    try {
+      return await executePython(code, useVenv);
+    } catch (error) {
+      console.error('Error in runPython handler:', error);
+      return {
+        error: error.message || 'Unknown error',
+        output: ''
+      };
+    }
+  });
+}
+
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -96,11 +571,6 @@ function createWindow() {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
-      // added
-      // webSecurity: false,
-      // contextIsolation: false,
-      // nodeIntegration: true, // this is false by default which is best practice
-      // nodeIntegrationInWorker: true
     }
   })
 
@@ -170,8 +640,11 @@ app.whenReady().then(() => {
     }
   })
 
-  // Add Python execution handlers
+  // Set up all Python-related IPC handlers
   setupPythonHandlers(ipcMain)
+
+  // Ensure app data directory exists
+  ensureAppDataDir()
 
   createWindow()
 

@@ -7,13 +7,21 @@ const api = {
   openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
   
   // Add Python execution method
-  runPython: (code) => ipcRenderer.invoke('run-python', code)
+  runPython: (code, useVenv = true) => ipcRenderer.invoke('runPython', code, useVenv)
 }
 
-// Add runPython to electronAPI
+// Extended API with Python environment management
 const extendedElectronAPI = {
   ...electronAPI,
-  runPython: (code) => ipcRenderer.invoke('run-python', code)
+  // Python code execution
+  runPython: (code, useVenv = true) => ipcRenderer.invoke('runPython', code, useVenv),
+  
+  // Python environment management
+  checkPythonInstallation: () => ipcRenderer.invoke('checkPythonInstallation'),
+  checkVenvStatus: () => ipcRenderer.invoke('checkVenvStatus'),
+  createVenv: () => ipcRenderer.invoke('createVenv'),
+  selectRequirementsFile: () => ipcRenderer.invoke('selectRequirementsFile'),
+  installRequirements: (requirementsPath) => ipcRenderer.invoke('installRequirements', requirementsPath)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

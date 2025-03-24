@@ -17,6 +17,7 @@ import { useNotebookData } from './NotebookDataContext'
 import { useState, useRef, useEffect } from 'react'
 import SearchBar from './SearchBar'
 import Import from './import-export/Import'
+import RequirementsManager from './RequirementsManager' // Import RequirementsManager
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
 
@@ -258,6 +259,10 @@ const Navbar = ({ toggleSidebar }) => {
           </Box>
           {/* box for space between edit and import/logout */}
           <Box sx={{ flexGrow: 1 }} />
+          
+          {/* Add RequirementsManager component here */}
+          <RequirementsManager />
+          
           <Import />
           <Divider
             orientation="vertical"

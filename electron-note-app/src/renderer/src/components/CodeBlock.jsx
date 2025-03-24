@@ -1,9 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, CircularProgress } from '@mui/material';
 
 const CodeBlock = ({ code, language, index }) => {
   const [executionResult, setExecutionResult] = useState(null);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [venvStatus, setVenvStatus] = useState({
+    checked: false,
+    available: false
+  });
+
+  // Check virtual environment status on component mount
+  useEffect(() => {
+    const checkVenvStatus = async () => {
+      // Only check if this is a Python code block
+      if (language && language.toLowerCase() === 'python') {
+        try {
+          // Check if the electron API is available and has the checkVenvStatus method
+          if (window.electron && window.electron.checkVenvStatus) {
+            const status = await window.electron.checkVenvStatus();
+            setVenvStatus({
+              checked: true,
+              available: status.exists
+            });
+            console.log('[DEBUG-CODEBLOCK] Venv status checked:', status);
+          } else {
+            console.log('[DEBUG-CODEBLOCK] checkVenvStatus API not available');
+            setVenvStatus({
+              checked: true,
+              available: false
+            });
+          }
+        } catch (error) {
+          console.error('[DEBUG-CODEBLOCK] Error checking venv status:', error);
+          setVenvStatus({
+            checked: true,
+            available: false
+          });
+        }
+      }
+    };
+
+    checkVenvStatus();
+  }, [language]);
 
   const handleRunCode = async () => {
     setIsExecuting(true);
@@ -113,31 +151,74 @@ const CodeBlock = ({ code, language, index }) => {
         throw new Error("Python execution is only available in the Electron app");
       }
       
-      // Call the IPC method to execute Python
-      const result = await window.electron.runPython(code);
-      
-      // Clean up the Python REPL output
-      const cleanedOutput = cleanReplOutput(result.output || '');
-      const cleanedError = cleanReplError(result.error || '');
-      
-      // Process the result
-      const logs = [];
-      
-      if (cleanedOutput) {
-        logs.push({ type: 'log', content: cleanedOutput });
+      // Show venv warning if it's been checked and not available
+      if (venvStatus.checked && !venvStatus.available) {
+        // Add a warning to the result, but still try to execute with system Python
+        const result = await window.electron.runPython(code, false); // false = use system Python
+        
+        // Clean up the Python REPL output
+        const cleanedOutput = cleanReplOutput(result.output || '');
+        const cleanedError = cleanReplError(result.error || '');
+        
+        // Process the result
+        const logs = [];
+        
+        // Add virtual environment warning
+        logs.push({ 
+          type: 'warn', 
+          content: 'No virtual environment detected. Running with system Python. Use the "Python Packages" button in the navbar to set up a virtual environment.' 
+        });
+        
+        if (cleanedOutput) {
+          logs.push({ type: 'log', content: cleanedOutput });
+        }
+        
+        if (cleanedError) {
+          logs.push({ type: 'error', content: cleanedError });
+        }
+        
+        const hasError = Boolean(cleanedError || result.error);
+        
+        setExecutionResult({
+          success: !hasError,
+          error: result.error,
+          logs: logs
+        });
+      } else {
+        // Use virtual environment if available
+        const result = await window.electron.runPython(code, venvStatus.available); // true = use venv
+        
+        // Clean up the Python REPL output
+        const cleanedOutput = cleanReplOutput(result.output || '');
+        const cleanedError = cleanReplError(result.error || '');
+        
+        // Process the result
+        const logs = [];
+        
+        // Add venv info if using it
+        if (venvStatus.available) {
+          logs.push({ 
+            type: 'log', 
+            content: 'Running in virtual environment with installed packages.' 
+          });
+        }
+        
+        if (cleanedOutput) {
+          logs.push({ type: 'log', content: cleanedOutput });
+        }
+        
+        if (cleanedError) {
+          logs.push({ type: 'error', content: cleanedError });
+        }
+        
+        const hasError = Boolean(cleanedError || result.error);
+        
+        setExecutionResult({
+          success: !hasError,
+          error: result.error,
+          logs: logs
+        });
       }
-      
-      if (cleanedError) {
-        logs.push({ type: 'error', content: cleanedError });
-      }
-      
-      const hasError = Boolean(cleanedError || result.error);
-      
-      setExecutionResult({
-        success: !hasError,
-        error: result.error,
-        logs: logs
-      });
     } catch (error) {
       setExecutionResult({
         success: false,
@@ -220,6 +301,20 @@ const CodeBlock = ({ code, language, index }) => {
         {code}
       </Typography>
       
+      {/* Python environment indicator for Python blocks */}
+      {language && language.toLowerCase() === 'python' && venvStatus.checked && (
+        <Typography variant="caption" sx={{ 
+          display: 'inline-block',
+          mt: 1,
+          color: venvStatus.available ? '#98c379' : '#d19a66',
+          fontSize: '0.7rem'
+        }}>
+          {venvStatus.available 
+            ? '🟢 Using virtual environment' 
+            : '⚠️ Using system Python (No virtual environment)'}
+        </Typography>
+      )}
+      
       {/* Run button */}
       <Button 
         variant="contained" 
@@ -227,7 +322,7 @@ const CodeBlock = ({ code, language, index }) => {
         onClick={handleRunCode}
         disabled={isExecuting}
         startIcon={isExecuting ? <CircularProgress size={14} color="inherit" /> : null}
-        sx={{ mt: 1 }}
+        sx={{ mt: 1, ml: language && language.toLowerCase() === 'python' ? 2 : 0 }}
       >
         {isExecuting ? 'Running...' : 'Run'}
       </Button>
