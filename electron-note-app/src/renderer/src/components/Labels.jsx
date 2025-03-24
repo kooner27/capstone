@@ -14,8 +14,16 @@ import {
   Divider
 } from '@mui/material'
 import { updateNotebookLabels, updateSectionLabels, updateNoteLabels } from '../api/labels'
+import IconButton from '@mui/material/IconButton'
+import LocalOfferIcon from '@mui/icons-material/LocalOffer'
 
 const Labels = () => {
+  const dividerStyle = {
+    my: 2,
+    borderColor: 'white',
+    opacity: 0.8,
+    borderBottomWidth: 2
+  }
   const { fetchNotebooks, fetchSections, fetchNotes } = useNotebookData()
 
   const [open, setOpen] = useState(false)
@@ -212,9 +220,12 @@ const Labels = () => {
 
   return (
     <>
-      <Button color="inherit" onClick={handleOpen} variant="outlined" sx={{ mr: 1 }}>
+      {/* <Button color="inherit" onClick={handleOpen} variant="outlined" sx={{ mr: 1 }}>
         Labels
-      </Button>
+      </Button> */}
+      <IconButton color="inherit" onClick={handleOpen} sx={{ mr: 1 }} title="Labels">
+        <LocalOfferIcon />
+      </IconButton>
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Manage Labels</DialogTitle>
@@ -255,7 +266,7 @@ const Labels = () => {
             </Box>
           )}
 
-          {selectedNotebook && selectedSection && <Divider />}
+          {selectedNotebook && selectedSection && <Divider sx={dividerStyle} />}
 
           {selectedSection && (
             <Box sx={{ mb: 3 }}>
@@ -293,7 +304,7 @@ const Labels = () => {
             </Box>
           )}
 
-          {selectedSection && selectedNote && <Divider sx={{ my: 2 }} />}
+          {selectedSection && selectedNote && <Divider sx={dividerStyle} />}
 
           {selectedNote && (
             <Box sx={{ mb: 3 }}>

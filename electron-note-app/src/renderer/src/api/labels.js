@@ -65,3 +65,21 @@ export const updateNoteLabels = async (notebookId, sectionId, noteId, labels) =>
 
   return data
 }
+
+// Fetch all unique labels used by the current user
+export const fetchUserLabels = async () => {
+  const userId = getUserId()
+  if (!userId) throw new Error('User not authenticated')
+
+  const response = await fetch(`${API_URL}/users/${userId}/labels`, {
+    headers: getAuthHeaders()
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to fetch user labels')
+  }
+
+  return data.labels
+}

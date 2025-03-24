@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   TextField,
   InputAdornment,
@@ -26,6 +26,7 @@ import BookmarkBorderOutlinedIcon from '@mui/icons-material/BookmarkBorderOutlin
 import { searchContent } from '../api/search'
 import { useNotebook } from './NotebookContext' // we will need to update the state on search result click
 import { getUserNotebooks, getSections, getNotes } from '../api/notebook'
+import { fetchUserLabels } from '../api/labels'
 
 const DEBUG = false
 
@@ -45,28 +46,52 @@ const SearchBar = () => {
   const [selectedLabels, setSelectedLabels] = useState([])
 
   // Sample available tags, fetch them later
-  const availableTags = [
-    'work',
-    'personal',
-    'important',
-    'todo',
-    'meeting',
-    'idea',
-    'research',
-    'followup',
-    'archived',
-    'project',
-    'review',
-    'daily',
-    'weekly',
-    'development',
-    'planning',
-    'design',
-    'ui',
-    'feedback',
-    'bug',
-    'feature'
-  ]
+  // const availableTags = [
+  //   'work',
+  //   'personal',
+  //   'important',
+  //   'todo',
+  //   'meeting',
+  //   'idea',
+  //   'research',
+  //   'followup',
+  //   'archived',
+  //   'project',
+  //   'review',
+  //   'daily',
+  //   'weekly',
+  //   'development',
+  //   'planning',
+  //   'design',
+  //   'ui',
+  //   'feedback',
+  //   'bug',
+  //   'feature'
+  // ]
+  const [availableTags, setAvailableTags] = useState([])
+  // We can conditionally have a lodaing circle or something if fetching tags takes too long
+  // For now it is pretty fast so we will not be conditionally rendering a loading animation or something
+  const [loadingTags, setLoadingTags] = useState(false)
+
+  // Fetch available tags on component mount
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        setLoadingTags(true)
+        const userTags = await fetchUserLabels()
+        setAvailableTags(userTags)
+      } catch (error) {
+        console.error('Error fetching user tags:', error)
+        // Fall back to empty array if fetch fails
+        setAvailableTags([])
+      } finally {
+        setLoadingTags(false)
+      }
+    }
+
+    loadTags()
+  }, []) // Empty dependency array means this runs once on mount
+
   const { setSelectedNotebook, setSelectedSection, setSelectedNote } = useNotebook()
 
   // Handle click on the search result
@@ -313,14 +338,14 @@ const SearchBar = () => {
               <Box sx={{ p: 1.5, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
                 <Typography variant="subtitle2" display="flex" alignItems="center">
                   <LocalOfferIcon sx={{ fontSize: '1rem', mr: 1 }} />
-                  Available Tags
+                  Available Labels
                 </Typography>
               </Box>
 
               {/* Tag Search Input */}
               <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
                 <InputBase
-                  placeholder="Add tags to search... (Press Enter)"
+                  placeholder="Add labels to search... (Press Enter)"
                   value={tagSearchQuery}
                   onChange={handleTagSearchChange}
                   onKeyPress={handleTagSearchKeyPress}
@@ -391,11 +416,11 @@ const SearchBar = () => {
 
               <Divider />
 
-              <Box sx={{ p: 1.5 }}>
+              {/* <Box sx={{ p: 1.5 }}>
                 <Typography variant="body2" color="text.secondary">
                   Type a tag and press Enter to add it to your search
                 </Typography>
-              </Box>
+              </Box> */}
             </Paper>
           </Popper>
         )}
