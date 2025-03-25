@@ -21,7 +21,8 @@ const extendedElectronAPI = {
   checkVenvStatus: () => ipcRenderer.invoke('checkVenvStatus'),
   createVenv: () => ipcRenderer.invoke('createVenv'),
   selectRequirementsFile: () => ipcRenderer.invoke('selectRequirementsFile'),
-  installRequirements: (requirementsPath) => ipcRenderer.invoke('installRequirements', requirementsPath)
+  installRequirements: (requirementsPath) => ipcRenderer.invoke('installRequirements', requirementsPath),
+  listInstalledPackages: () => ipcRenderer.invoke('listInstalledPackages')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

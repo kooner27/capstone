@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Button,
   Dialog,
@@ -15,15 +15,43 @@ import {
   StepLabel,
   Paper,
   Divider,
-  LinearProgress
+  LinearProgress,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+  Tooltip,
+  Card,
+  CardContent,
+  InputAdornment,
+  TextField,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableSortLabel
 } from '@mui/material';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SearchIcon from '@mui/icons-material/Search';
+import AddIcon from '@mui/icons-material/Add';
+
+// Define fixed height constants for consistency
+const DIALOG_CONTENT_HEIGHT = '550px';
+const TABLE_HEIGHT = '250px';
+const CONSOLE_HEIGHT = '300px';
 
 const RequirementsManager = () => {
   const [open, setOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('packages'); // 'packages' or 'wizard'
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -37,8 +65,19 @@ const RequirementsManager = () => {
   const [logOutput, setLogOutput] = useState([]);
   const [installationProgress, setInstallationProgress] = useState(0);
   const [progressDeterminate, setProgressDeterminate] = useState(false);
-  // Add a timeout state to track installation duration
   const [installTimeoutId, setInstallTimeoutId] = useState(null);
+  
+  // States for installed packages
+  const [installedPackages, setInstalledPackages] = useState([]);
+  const [packageListLoading, setPackageListLoading] = useState(false);
+  const [packageSearchQuery, setPackageSearchQuery] = useState('');
+  const [packagesSortBy, setPackagesSortBy] = useState('name');
+  const [packagesSortDirection, setPackagesSortDirection] = useState('asc');
+  const [venvExists, setVenvExists] = useState(false);
+  const [pythonInfo, setPythonInfo] = useState({
+    python: { version: 'Unknown' },
+    pip: { version: 'Unknown' }
+  });
 
   const steps = [
     'Check Python & pip',
@@ -47,8 +86,113 @@ const RequirementsManager = () => {
     'Install packages'
   ];
 
+  // Check if virtual environment exists when component mounts or dialog opens
+  useEffect(() => {
+    if (open) {
+      checkEnvironmentStatus();
+    }
+  }, [open]);
+
+  // Check Python and venv status, and fetch packages if venv exists
+  const checkEnvironmentStatus = async () => {
+    try {
+      // Check venv status
+      const venvResult = await window.electron.checkVenvStatus();
+      setVenvExists(venvResult.exists);
+      
+      // Check Python installation
+      const pythonResult = await window.electron.checkPythonInstallation();
+      setPythonInfo(pythonResult);
+      
+      // If venv exists, fetch installed packages
+      if (venvResult.exists) {
+        fetchInstalledPackages();
+      }
+    } catch (error) {
+      console.error("Error checking environment status:", error);
+      setVenvExists(false);
+    }
+  };
+
+  // Function to fetch installed packages
+  const fetchInstalledPackages = async () => {
+    setPackageListLoading(true);
+    setError(null);
+    
+    try {
+      const result = await window.electron.listInstalledPackages();
+      console.log("Package list result:", result); // Debug the full result
+      
+      if (result.success) {
+        // Make sure we have the right data structure
+        let processedPackages = [];
+        
+        if (Array.isArray(result.packages)) {
+          // Check the structure of the first package to determine how to process
+          const samplePackage = result.packages[0];
+          console.log("Sample package structure:", samplePackage);
+          
+          if (samplePackage) {
+            if (typeof samplePackage === 'object') {
+              // Handle pip's JSON format (which might nest name/version differently depending on pip version)
+              processedPackages = result.packages.map(pkg => {
+                // Normalize the package structure to ensure name and version properties
+                return {
+                  name: pkg.name || pkg.package_name || Object.keys(pkg)[0] || "Unknown",
+                  version: pkg.version || pkg.package_version || pkg[Object.keys(pkg)[0]] || "Unknown"
+                };
+              });
+            } else if (typeof samplePackage === 'string') {
+              // Handle string format (in case it's a simple array of strings)
+              processedPackages = result.packages.map(pkgStr => {
+                const parts = pkgStr.split('@');
+                return {
+                  name: parts[0] || "Unknown",
+                  version: parts[1] || "Unknown"
+                };
+              });
+            }
+          }
+        }
+        
+        console.log("Processed packages:", processedPackages); // Debug the processed packages
+        setInstalledPackages(processedPackages);
+        setLogOutput(prev => [...prev, `Found ${processedPackages.length} installed packages`]);
+      } else {
+        console.error("Error fetching packages:", result.error);
+        setError(result.error || 'Failed to fetch installed packages');
+        setLogOutput(prev => [...prev, `Error: ${result.error}`]);
+        setInstalledPackages([]);
+      }
+    } catch (error) {
+      console.error("Exception fetching packages:", error);
+      setError(`Error fetching installed packages: ${error.message}`);
+      setLogOutput(prev => [...prev, `Error: ${error.message}`]);
+      setInstalledPackages([]);
+    } finally {
+      setPackageListLoading(false);
+    }
+  };
+
   const handleOpen = () => {
     setOpen(true);
+    setViewMode('packages'); // Default to packages view
+    setError(null);
+    checkEnvironmentStatus();
+  };
+
+  const handleClose = () => {
+    // Clear any active timeout before closing
+    if (installTimeoutId) {
+      clearTimeout(installTimeoutId);
+      setInstallTimeoutId(null);
+    }
+    setOpen(false);
+  };
+
+  // Switch to wizard mode
+  const handleStartWizard = () => {
+    setViewMode('wizard');
     setStep(0);
     setError(null);
     setLogOutput([]);
@@ -61,15 +205,6 @@ const RequirementsManager = () => {
       venv: { checked: false, created: false },
       requirements: { installed: false, error: null, output: '' }
     });
-  };
-
-  const handleClose = () => {
-    // Clear any active timeout before closing
-    if (installTimeoutId) {
-      clearTimeout(installTimeoutId);
-      setInstallTimeoutId(null);
-    }
-    setOpen(false);
   };
 
   // Step 1: Check Python and pip installation
@@ -88,6 +223,8 @@ const RequirementsManager = () => {
       
       const pythonInstalled = result.python.installed;
       const pipInstalled = result.pip.installed;
+      
+      setPythonInfo(result);
       
       setStatus({
         ...status,
@@ -185,6 +322,7 @@ const RequirementsManager = () => {
         venv: { checked: true, created: true }
       });
       
+      setVenvExists(true);
       setLogOutput(prev => [...prev, 'Virtual environment created/updated successfully']);
       return true;
     } catch (error) {
@@ -202,7 +340,7 @@ const RequirementsManager = () => {
     }
   };
 
-  // Step 4: Install requirements - Improved with better progress feedback
+  // Step 4: Install requirements
   const installRequirements = async () => {
     if (!selectedFile) {
       setError('No requirements file selected');
@@ -334,6 +472,10 @@ const RequirementsManager = () => {
           
           // Show a warning but don't block progression
           setError(`Partial installation: ${result.error}`);
+          
+          // After installation, fetch the list of installed packages
+          await fetchInstalledPackages();
+          
           return true; // Return true to allow progression to completion
         } else {
           // Full success
@@ -352,6 +494,10 @@ const RequirementsManager = () => {
           });
           
           setError(null);
+          
+          // After installation, fetch the list of installed packages
+          await fetchInstalledPackages();
+          
           return true;
         }
       } else {
@@ -414,7 +560,7 @@ const RequirementsManager = () => {
     }
   };
 
-  // Handle next step
+  // Handle next step in wizard
   const handleNext = async () => {
     let success = false;
     
@@ -440,12 +586,12 @@ const RequirementsManager = () => {
     }
   };
 
-  // Handle back step
+  // Handle back step in wizard
   const handleBack = () => {
     setStep(prevStep => prevStep - 1);
   };
 
-  // Reset the process
+  // Reset the wizard
   const handleReset = () => {
     // Clear any active timeout before resetting
     if (installTimeoutId) {
@@ -467,7 +613,71 @@ const RequirementsManager = () => {
     });
   };
 
-  // Render step content
+  // Handle sort change for package table
+  const handlePackageSortChange = (property) => {
+    const isAsc = packagesSortBy === property && packagesSortDirection === 'asc';
+    setPackagesSortDirection(isAsc ? 'desc' : 'asc');
+    setPackagesSortBy(property);
+  };
+
+  // Filter packages based on search query
+  const getFilteredPackages = () => {
+    console.log("Getting filtered packages from:", installedPackages); // Debug log
+    
+    if (!installedPackages || !Array.isArray(installedPackages) || installedPackages.length === 0) {
+      console.log("No packages to filter"); // Debug log
+      return [];
+    }
+    
+    try {
+      let filteredList = [...installedPackages];
+      
+      // Apply search filter if query exists
+      if (packageSearchQuery) {
+        const query = packageSearchQuery.toLowerCase();
+        filteredList = filteredList.filter(pkg => {
+          // Safely access properties with null checks
+          const name = pkg && pkg.name ? pkg.name.toLowerCase() : '';
+          const version = pkg && pkg.version ? pkg.version.toLowerCase() : '';
+          return name.includes(query) || version.includes(query);
+        });
+      }
+      
+      // Apply sorting with error handling
+      filteredList.sort((a, b) => {
+        try {
+          const factor = packagesSortDirection === 'asc' ? 1 : -1;
+          
+          if (packagesSortBy === 'name') {
+            const nameA = (a && a.name) || '';
+            const nameB = (b && b.name) || '';
+            return factor * nameA.localeCompare(nameB);
+          } else if (packagesSortBy === 'version') {
+            const versionA = (a && a.version) || '';
+            const versionB = (b && b.version) || '';
+            return factor * versionA.localeCompare(versionB);
+          }
+        } catch (e) {
+          console.error("Error sorting packages:", e);
+        }
+        return 0;
+      });
+      
+      console.log("Returning filtered list:", filteredList.length); // Debug log
+      return filteredList;
+    } catch (error) {
+      console.error("Error in getFilteredPackages:", error);
+      return [];
+    }
+  };
+
+  // When installation completes, go back to packages view
+  const handleWizardCompletion = () => {
+    setViewMode('packages');
+    fetchInstalledPackages(); // Refresh packages list
+  };
+
+  // Render wizard steps content
   const getStepContent = (stepIndex) => {
     switch (stepIndex) {
       case 0:
@@ -615,6 +825,35 @@ const RequirementsManager = () => {
             <DialogContentText>
               You can now run Python code in this environment. All imported packages from your requirements.txt file will be available.
             </DialogContentText>
+            
+            <Card variant="outlined" sx={{ mt: 2 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Environment Information</Typography>
+                <Typography variant="body2">
+                  <strong>Python Version:</strong> {status.python.version}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Pip Version:</strong> {status.pip.version}
+                </Typography>
+                {selectedFile && (
+                  <Typography variant="body2">
+                    <strong>Requirements File:</strong> {selectedFile.name}
+                  </Typography>
+                )}
+                <Typography variant="body2">
+                  <strong>Virtual Environment:</strong> {status.venv.created ? 'Created successfully' : 'Not created'}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Packages Installation:</strong> {
+                    status.requirements.installed 
+                      ? (status.requirements.error 
+                        ? 'Partial success (some packages failed)' 
+                        : 'All packages installed successfully')
+                      : 'Not completed'
+                  }
+                </Typography>
+              </CardContent>
+            </Card>
           </Box>
         );
         
@@ -634,123 +873,326 @@ const RequirementsManager = () => {
         color: '#f8f8f8',
         fontFamily: 'monospace',
         fontSize: '0.875rem',
-        height: '200px', // Increased height to show more log messages
+        height: CONSOLE_HEIGHT, // Use constant for consistent height
         overflow: 'auto',
         borderRadius: 1
       }}
     >
-      {logOutput.length === 0 ? (
-        <Typography variant="body2" sx={{ color: '#888', fontStyle: 'italic' }}>
-          Log output will appear here...
-        </Typography>
-      ) : (
-        logOutput.map((log, index) => (
-          <Typography 
-            variant="body2" 
-            key={index} 
-            sx={{ 
-              whiteSpace: 'pre-wrap', 
-              mb: 0.5,
-              color: log.includes('SUCCESS') 
-                ? '#98c379' 
-                : log.includes('ERROR') || log.includes('FAILED') || log.includes('WARNING')
-                ? '#e06c75'
-                : '#f8f8f8'
-            }}
-          >
-            {log}
+      <Box sx={{ height: CONSOLE_HEIGHT, overflow: 'auto' }}>
+        {logOutput.length === 0 ? (
+          <Typography variant="body2" sx={{ color: '#888', fontStyle: 'italic' }}>
+            Log output will appear here...
           </Typography>
-        ))
-      )}
+        ) : (
+          logOutput.map((log, index) => (
+            <Typography 
+              variant="body2" 
+              key={index} 
+              sx={{ 
+                whiteSpace: 'pre-wrap', 
+                mb: 0.5,
+                color: log.includes('SUCCESS') 
+                  ? '#98c379' 
+                  : log.includes('ERROR') || log.includes('FAILED') || log.includes('WARNING')
+                  ? '#e06c75'
+                  : '#f8f8f8'
+              }}
+            >
+              {log}
+            </Typography>
+          ))
+        )}
+      </Box>
     </Paper>
+  );
+
+  // Render the packages view
+  const renderPackagesView = () => (
+    <Box>
+      <DialogContentText>
+        This shows all Python packages installed in your virtual environment.
+      </DialogContentText>
+      
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 2 }}>
+        <Typography variant="subtitle1">
+          {venvExists 
+            ? `${getFilteredPackages().length} package(s)${installedPackages.length !== getFilteredPackages().length 
+              ? ` (filtered from ${installedPackages.length})` 
+              : ''}`
+            : 'No virtual environment found'}
+        </Typography>
+        
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <TextField
+            placeholder="Search packages..."
+            variant="outlined"
+            size="small"
+            value={packageSearchQuery}
+            onChange={(e) => setPackageSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              )
+            }}
+          />
+          
+          <Tooltip title="Refresh package list">
+            <IconButton 
+              onClick={fetchInstalledPackages}
+              disabled={packageListLoading || !venvExists}
+            >
+              {packageListLoading ? <CircularProgress size={20} /> : <RefreshIcon />}
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
+      
+      {packageListLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3, height: TABLE_HEIGHT }}>
+          <CircularProgress />
+        </Box>
+      ) : !venvExists ? (
+        <Box sx={{ height: TABLE_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            No virtual environment found. Click "Install Packages" below to set up a virtual environment.
+          </Alert>
+        </Box>
+      ) : installedPackages.length === 0 ? (
+        <Box sx={{ height: TABLE_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            No packages installed in the virtual environment.
+          </Alert>
+        </Box>
+      ) : (
+        <TableContainer component={Paper} variant="outlined" sx={{ height: TABLE_HEIGHT, overflow: 'auto' }}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <TableSortLabel
+                    active={packagesSortBy === 'name'}
+                    direction={packagesSortBy === 'name' ? packagesSortDirection : 'asc'}
+                    onClick={() => handlePackageSortChange('name')}
+                  >
+                    Package Name
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={packagesSortBy === 'version'}
+                    direction={packagesSortBy === 'version' ? packagesSortDirection : 'asc'}
+                    onClick={() => handlePackageSortChange('version')}
+                  >
+                    Version
+                  </TableSortLabel>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getFilteredPackages().length > 0 ? (
+                getFilteredPackages().map((pkg, index) => (
+                  <TableRow key={`${pkg.name}-${index}`}>
+                    <TableCell>{pkg.name || 'Unknown'}</TableCell>
+                    <TableCell>{pkg.version || 'Unknown'}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={2} align="center">
+                    <Typography variant="body2" color="text.secondary">
+                      {packageSearchQuery ? 'No packages match your search.' : 'No packages to display.'}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+      
+      {venvExists && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="caption" color="text.secondary">
+            These packages are installed in the virtual environment and can be imported in your Python code.
+          </Typography>
+        </Box>
+      )}
+      
+      {/* Environment information */}
+      <Card variant="outlined" sx={{ mt: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>Environment Information</Typography>
+          <Typography variant="body2">
+            <strong>Python Version:</strong> {pythonInfo.python.version || 'Unknown'}
+          </Typography>
+          <Typography variant="body2">
+            <strong>Pip Version:</strong> {pythonInfo.pip.version || 'Unknown'}
+          </Typography>
+          <Typography variant="body2">
+            <strong>Virtual Environment:</strong> {venvExists ? 'Found' : 'Not found'}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
   );
 
   return (
     <>
-      <Button
-        color="inherit"
-        startIcon={<TerminalIcon />}
-        onClick={handleOpen}
-        sx={{ mx: 1 }}
-      >
-        Python Packages
-      </Button>
+      <Tooltip title="Python Package Manager">
+        <Button
+          color="inherit"
+          startIcon={<TerminalIcon />}
+          onClick={handleOpen}
+          sx={{
+            mx: 1,
+            minWidth: '48px',
+            padding: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}
+        />
+      </Tooltip>
       
       <Dialog
         open={open}
         onClose={loading ? undefined : handleClose}
         fullWidth
         maxWidth="md"
+        PaperProps={{ 
+          sx: { 
+            height: 'auto', 
+            maxHeight: '80vh',
+            display: 'flex',
+            flexDirection: 'column'
+          } 
+        }}
       >
         <DialogTitle>
           Python Package Manager
         </DialogTitle>
         
-        <DialogContent>
-          <Stepper activeStep={step} sx={{ py: 3 }}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-          
-          <Box sx={{ mb: 2 }}>
-            {getStepContent(step)}
-          </Box>
-          
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
-            </Alert>
+        <DialogContent sx={{ height: DIALOG_CONTENT_HEIGHT, overflow: 'auto' }}>
+          {viewMode === 'wizard' ? (
+            // Wizard mode
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              {step < steps.length && (
+                <Stepper activeStep={step} sx={{ py: 3 }}>
+                  {steps.map((label) => (
+                    <Step key={label}>
+                      <StepLabel>{label}</StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
+              )}
+              
+              <Box sx={{ mb: 2, flex: '0 0 auto' }}>
+                {getStepContent(step)}
+              </Box>
+              
+              {error && (
+                <Alert severity="error" sx={{ mt: 2, flex: '0 0 auto' }}>
+                  {error}
+                </Alert>
+              )}
+              
+              {step < steps.length && 
+                <Box sx={{ flex: '1 1 auto', minHeight: CONSOLE_HEIGHT, overflow: 'hidden' }}>
+                  {renderConsole()}
+                </Box>
+              }
+            </Box>
+          ) : (
+            // Packages view
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              {renderPackagesView()}
+            </Box>
           )}
-          
-          {renderConsole()}
         </DialogContent>
         
         <DialogActions>
-          <Button 
-            onClick={handleClose} 
-            disabled={loading}
-          >
-            {loading ? 'Please wait...' : 'Cancel'}
-          </Button>
-          
-          <Box sx={{ flex: '1 1 auto' }} />
-          
-          {step === steps.length && (
-            <Button 
-              onClick={handleReset}
-              variant="outlined"
-            >
-              Reset
-            </Button>
-          )}
-          
-          {step > 0 && step < steps.length && (
-            <Button 
-              onClick={handleBack}
-              disabled={loading}
-            >
-              Back
-            </Button>
-          )}
-          
-          {step < steps.length && (
-            <Button 
-              variant="contained" 
-              onClick={handleNext}
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} /> : null}
-            >
-              {loading 
-                ? step === 3 
-                  ? 'Installing...' 
-                  : 'Working...' 
-                : step === steps.length - 1 
-                  ? 'Finish' 
-                  : 'Next'}
-            </Button>
+          {viewMode === 'wizard' ? (
+            // Wizard mode actions
+            step === steps.length ? (
+              // Completion step - show "View Installed Packages" button
+              <>
+                <Button
+                  onClick={handleReset}
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<CloudUploadIcon />}
+                >
+                  Install More Packages
+                </Button>
+                <Box sx={{ flex: '1 1 auto' }} />
+                <Button 
+                  onClick={handleWizardCompletion} 
+                  variant="contained"
+                  color="primary"
+                >
+                  View Installed Packages
+                </Button>
+              </>
+            ) : (
+              // Earlier steps - show "Cancel" and navigation buttons
+              <>
+                <Button 
+                  onClick={() => setViewMode('packages')} 
+                  disabled={loading}
+                >
+                  {loading ? 'Please wait...' : 'Back to Package List'}
+                </Button>
+                
+                <Box sx={{ flex: '1 1 auto' }} />
+                
+                {step > 0 && step < steps.length && (
+                  <Button 
+                    onClick={handleBack}
+                    disabled={loading}
+                  >
+                    Back
+                  </Button>
+                )}
+                
+                {step < steps.length && (
+                  <Button 
+                    variant="contained" 
+                    onClick={handleNext}
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={20} /> : null}
+                  >
+                    {loading 
+                      ? step === 3 
+                        ? 'Installing...' 
+                        : 'Working...' 
+                      : step === steps.length - 1 
+                        ? 'Install' 
+                        : 'Next'}
+                  </Button>
+                )}
+              </>
+            )
+          ) : (
+            // Packages view actions
+            <>
+              <Button 
+                onClick={handleStartWizard}
+                variant="contained" 
+                color="primary"
+                startIcon={<AddIcon />}
+              >
+                Install Packages
+              </Button>
+              <Box sx={{ flex: '1 1 auto' }} />
+              <Button 
+                onClick={handleClose} 
+                variant="outlined"
+              >
+                Close
+              </Button>
+            </>
           )}
         </DialogActions>
       </Dialog>

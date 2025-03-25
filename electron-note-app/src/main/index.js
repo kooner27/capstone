@@ -196,6 +196,99 @@ async function createVirtualEnvironment() {
   }
 }
 
+// Function to list installed packages in the virtual environment
+async function listInstalledPackages() {
+  try {
+    // Check if venv exists
+    const venvCheck = await checkVenvExists();
+    if (!venvCheck.exists) {
+      return {
+        success: false,
+        error: 'Virtual environment not found',
+        packages: []
+      };
+    }
+    
+    // Get pip path
+    const pipPath = process.platform === 'win32'
+      ? path.join(VENV_DIR, 'Scripts', 'pip.exe')
+      : path.join(VENV_DIR, 'bin', 'pip');
+    
+    // Run pip list command with JSON output format
+    const { stdout } = await execCommand(`"${pipPath}" list --format=json`);
+    
+    // Parse the JSON output
+    const packages = JSON.parse(stdout);
+    
+    return {
+      success: true,
+      packages: packages
+    };
+  } catch (error) {
+    console.error('Error listing installed packages:', error);
+    
+    // Special handling for common errors
+    if (error.message.includes('no such file or directory')) {
+      return {
+        success: false,
+        error: 'Pip executable not found in virtual environment',
+        packages: []
+      };
+    }
+    
+    if (error.message.includes('SyntaxError: Unexpected token')) {
+      // Older pip versions might not support JSON output
+      try {
+        // Fallback to text format and parse it manually
+        const pipPath = process.platform === 'win32'
+          ? path.join(VENV_DIR, 'Scripts', 'pip.exe')
+          : path.join(VENV_DIR, 'bin', 'pip');
+        
+        const { stdout } = await execCommand(`"${pipPath}" list`);
+        
+        // Parse the text output
+        // Format is typically:
+        // Package    Version
+        // -------    -------
+        // package1   1.0.0
+        // package2   2.0.0
+        
+        const lines = stdout.split('\n').slice(2); // Skip header lines
+        const packages = lines
+          .filter(line => line.trim()) // Skip empty lines
+          .map(line => {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 2) {
+              return {
+                name: parts[0],
+                version: parts[1]
+              };
+            }
+            return null;
+          })
+          .filter(pkg => pkg !== null);
+        
+        return {
+          success: true,
+          packages: packages
+        };
+      } catch (fallbackError) {
+        return {
+          success: false,
+          error: `Failed to parse pip output: ${fallbackError.message}`,
+          packages: []
+        };
+      }
+    }
+    
+    return {
+      success: false,
+      error: error.message,
+      packages: []
+    };
+  }
+}
+
 // Install packages from requirements.txt
 // Enhanced installRequirements function with build error handling
 async function installRequirements(requirementsPath) {
@@ -546,6 +639,20 @@ function setupPythonHandlers(ipcMain) {
     }
   });
   
+  // List installed packages
+  ipcMain.handle('listInstalledPackages', async () => {
+    try {
+      return await listInstalledPackages();
+    } catch (error) {
+      console.error('Error in listInstalledPackages handler:', error);
+      return { 
+        success: false, 
+        error: error.message,
+        packages: []
+      };
+    }
+  });
+  
   // Run Python code
   ipcMain.handle('runPython', async (event, code, useVenv = true) => {
     try {
@@ -663,6 +770,3 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.
