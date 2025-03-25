@@ -193,7 +193,8 @@ const handleFileSelect = async () => {
   return (
     <>
       <Tooltip title="Import Markdown">
-        <IconButton color="inherit" onClick={handleFileSelect} sx={{ color: 'white' }}>
+        <IconButton color="inherit" onClick={handleFileSelect} sx={{ color: 'white', backgroundColor: 'transparent', 
+ }}>
           <UploadFileIcon />
         </IconButton>
       </Tooltip>

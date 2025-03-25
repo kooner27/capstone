@@ -1041,19 +1041,19 @@ const RequirementsManager = () => {
   return (
     <>
       <Tooltip title="Python Package Manager">
-        <Button
+        <IconButton
           color="inherit"
-          startIcon={<TerminalIcon />}
           onClick={handleOpen}
           sx={{
             mx: 1,
-            minWidth: '48px',
             padding: 0,
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
           }}
-        />
+        >
+          <TerminalIcon />
+        </IconButton>
       </Tooltip>
       
       <Dialog
