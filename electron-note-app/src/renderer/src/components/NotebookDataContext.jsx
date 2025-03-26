@@ -1,8 +1,12 @@
 import { createContext, useContext, useState } from 'react'
-import { 
-  getUserNotebooks, createNotebook as apiCreateNotebook,
-  getSections, createSection as apiCreateSection,
-  getNotes, createNote as apiCreateNote, updateNote as apiUpdateNote
+import {
+  getUserNotebooks,
+  createNotebook as apiCreateNotebook,
+  getSections,
+  createSection as apiCreateSection,
+  getNotes,
+  createNote as apiCreateNote,
+  updateNote as apiUpdateNote
 } from '../api/notebook'
 
 // Create context for notebook data operations
@@ -38,7 +42,7 @@ export const NotebookDataProvider = ({ children }) => {
 
   const fetchSections = async (notebookId) => {
     if (!notebookId) return []
-    
+
     setIsLoading(true)
     setError(null)
     try {
@@ -56,7 +60,7 @@ export const NotebookDataProvider = ({ children }) => {
 
   const fetchNotes = async (notebookId, sectionId) => {
     if (!notebookId || !sectionId) return []
-    
+
     setIsLoading(true)
     setError(null)
     try {
@@ -78,7 +82,7 @@ export const NotebookDataProvider = ({ children }) => {
     setError(null)
     try {
       const newNotebook = await apiCreateNotebook(name)
-      setNotebooks(prev => [...prev, newNotebook])
+      setNotebooks((prev) => [...prev, newNotebook])
       return newNotebook
     } catch (err) {
       console.error('Error creating notebook:', err)
@@ -91,12 +95,12 @@ export const NotebookDataProvider = ({ children }) => {
 
   const createSection = async (notebookId, title) => {
     if (!notebookId) return null
-    
+
     setIsLoading(true)
     setError(null)
     try {
       const newSection = await apiCreateSection(notebookId, title)
-      setSections(prev => [...prev, newSection])
+      setSections((prev) => [...prev, newSection])
       return newSection
     } catch (err) {
       console.error('Error creating section:', err)
@@ -109,12 +113,12 @@ export const NotebookDataProvider = ({ children }) => {
 
   const createNote = async (notebookId, sectionId, title, content = '') => {
     if (!notebookId || !sectionId) return null
-    
+
     setIsLoading(true)
     setError(null)
     try {
       const newNote = await apiCreateNote(notebookId, sectionId, title, content)
-      setNotes(prev => [...prev, newNote])
+      setNotes((prev) => [...prev, newNote])
       return newNote
     } catch (err) {
       console.error('Error creating note:', err)
@@ -128,38 +132,40 @@ export const NotebookDataProvider = ({ children }) => {
   // MODIFIED: Enhanced updateNote with better logging
   const updateNote = async (notebookId, sectionId, noteId, title, content) => {
     if (!notebookId || !sectionId || !noteId) {
-      console.error('Missing required parameters for updateNote:', { notebookId, sectionId, noteId });
-      return false;
+      console.error('Missing required parameters for updateNote:', {
+        notebookId,
+        sectionId,
+        noteId
+      })
+      return false
     }
-    
+
     // Add validation for content
     if (content === undefined || content === null) {
-      console.error('Attempted to update note with undefined/null content');
-      return false;
+      console.error('Attempted to update note with undefined/null content')
+      return false
     }
-    
-    setIsLoading(true);
-    setError(null);
-    
+
+    setIsLoading(true)
+    setError(null)
+
     try {
-      console.log('Sending note update to API with content:', content);
-      
+      console.log('Sending note update to API with content:', content)
+
       // Make the API call to update the note
-      await apiUpdateNote(notebookId, sectionId, noteId, title, content);
-      
+      await apiUpdateNote(notebookId, sectionId, noteId, title, content)
+
       // Update local state
-      setNotes(prev => 
-        prev.map(n => n._id === noteId ? { ...n, title, content } : n)
-      );
-      
-      console.log('Note updated successfully');
-      return true;
+      setNotes((prev) => prev.map((n) => (n._id === noteId ? { ...n, title, content } : n)))
+
+      console.log('Note updated successfully')
+      return true
     } catch (err) {
-      console.error('Error updating note:', err);
-      setError(err.message);
-      return false;
+      console.error('Error updating note:', err)
+      setError(err.message)
+      return false
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
@@ -181,9 +187,5 @@ export const NotebookDataProvider = ({ children }) => {
     updateNote
   }
 
-  return (
-    <NotebookDataContext.Provider value={value}>
-      {children}
-    </NotebookDataContext.Provider>
-  )
+  return <NotebookDataContext.Provider value={value}>{children}</NotebookDataContext.Provider>
 }

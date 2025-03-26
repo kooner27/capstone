@@ -36,7 +36,7 @@ const Sidebar = () => {
     selectedSection,
     setSelectedSection,
     selectedNote,
-    setSelectedNote,
+    setSelectedNote
   } = useNotebook()
 
   // Get data and operations from NotebookDataContext
@@ -231,7 +231,7 @@ const Sidebar = () => {
           ))}
           {!notebooks.length && !isLoading && (
             <ListItem>
-              <ListItemText 
+              <ListItemText
                 primary="No notebooks found"
                 secondary="Create a notebook to get started"
               />
@@ -407,8 +407,8 @@ const Sidebar = () => {
                 key={section._id}
                 selected={selectedSection && selectedSection._id === section._id}
                 onClick={() => {
-                  setSelectedSection(section);
-                  setSelectedNote(null);
+                  setSelectedSection(section)
+                  setSelectedNote(null)
                 }}
                 sx={{
                   ...listItemStyles,
@@ -441,7 +441,7 @@ const Sidebar = () => {
             ))}
             {!sections.length && !isLoading && (
               <ListItem>
-                <ListItemText 
+                <ListItemText
                   primary="No sections found"
                   secondary="Create a new section to get started"
                 />
@@ -611,7 +611,7 @@ const Sidebar = () => {
             ))}
             {selectedSection && !notes.length && !isLoading && (
               <ListItem>
-                <ListItemText 
+                <ListItemText
                   primary="No notes found"
                   secondary="Create a new note to get started"
                 />

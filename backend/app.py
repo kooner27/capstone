@@ -336,6 +336,25 @@ def update_note_labels(user_id, notebook_id, section_id, note_id):
         
     return jsonify({"message": "Labels updated successfully"}), 200
 
+
+@app.route("/api/users/<user_id>/labels", methods=["GET"])
+def get_all_user_labels(user_id):
+    """Get all unique labels used across a user's notebooks, sections, and notes"""
+    
+    notebook_labels = notebooks_collection.distinct("labels", {"user_id": user_id})
+    
+    section_labels = sections_collection.distinct("labels", {"user_id": user_id})
+    
+    note_labels = notes_collection.distinct("labels", {"user_id": user_id})
+    
+    # Combine all and remove duplicates
+    all_labels = sorted(list(set(notebook_labels + section_labels + note_labels)))
+    
+    # Filter none or empty values
+    all_labels = [label for label in all_labels if label]
+    
+    return jsonify({"labels": all_labels}), 200
+
 # ------------------------------------------------------------------------------
 # Run the Flask Application
 # ------------------------------------------------------------------------------

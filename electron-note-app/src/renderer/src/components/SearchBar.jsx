@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   TextField,
   InputAdornment,
@@ -24,6 +24,11 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import BookmarkBorderOutlinedIcon from '@mui/icons-material/BookmarkBorderOutlined'
 import { searchContent } from '../api/search'
+import { useNotebook } from './NotebookContext' // we will need to update the state on search result click
+import { getUserNotebooks, getSections, getNotes } from '../api/notebook'
+import { fetchUserLabels } from '../api/labels'
+
+const DEBUG = false
 
 const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -41,28 +46,134 @@ const SearchBar = () => {
   const [selectedLabels, setSelectedLabels] = useState([])
 
   // Sample available tags, fetch them later
-  const availableTags = [
-    'work',
-    'personal',
-    'important',
-    'todo',
-    'meeting',
-    'idea',
-    'research',
-    'followup',
-    'archived',
-    'project',
-    'review',
-    'daily',
-    'weekly',
-    'development',
-    'planning',
-    'design',
-    'ui',
-    'feedback',
-    'bug',
-    'feature'
-  ]
+  // const availableTags = [
+  //   'work',
+  //   'personal',
+  //   'important',
+  //   'todo',
+  //   'meeting',
+  //   'idea',
+  //   'research',
+  //   'followup',
+  //   'archived',
+  //   'project',
+  //   'review',
+  //   'daily',
+  //   'weekly',
+  //   'development',
+  //   'planning',
+  //   'design',
+  //   'ui',
+  //   'feedback',
+  //   'bug',
+  //   'feature'
+  // ]
+  const [availableTags, setAvailableTags] = useState([])
+  // We can conditionally have a lodaing circle or something if fetching tags takes too long
+  // For now it is pretty fast so we will not be conditionally rendering a loading animation or something
+  const [loadingTags, setLoadingTags] = useState(false)
+
+  // Fetch available tags on component mount
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        setLoadingTags(true)
+        const userTags = await fetchUserLabels()
+        setAvailableTags(userTags)
+      } catch (error) {
+        console.error('Error fetching user tags:', error)
+        // Fall back to empty array if fetch fails
+        setAvailableTags([])
+      } finally {
+        setLoadingTags(false)
+      }
+    }
+
+    loadTags()
+  }, []) // Empty dependency array means this runs once on mount
+
+  const { setSelectedNotebook, setSelectedSection, setSelectedNote } = useNotebook()
+
+  // Handle click on the search result
+  // We need to set the correct selection state based on what they clicked
+  // Fetch the notebook/section/note and set it
+  const handleResultClick = async (result) => {
+    DEBUG && console.log('Search result clicked:', result)
+    setOpen(false) // close the dropdown
+
+    try {
+      switch (result.type) {
+        case 'notebook':
+          // For notebooks, we can use the search result directly, since the objects are basically the same
+          setSelectedNotebook(result)
+          break
+
+        case 'section':
+          if (result.notebook_id) {
+            // First, fetch the complete notebook
+            DEBUG && console.log('Fetching parent notebook for section:', result.notebook_id)
+            const notebooks = await getUserNotebooks()
+            const notebook = notebooks.find((n) => n._id === result.notebook_id)
+
+            if (notebook) {
+              // Set notebook first
+              setSelectedNotebook(notebook)
+
+              // Wait for effects to complete before setting section
+              setTimeout(() => {
+                DEBUG && console.log('Setting section from search:', result)
+                setSelectedSection(result)
+              }, 100)
+            }
+          }
+          break
+
+        case 'note':
+          if (result.notebook_id && result.section_id) {
+            // First fetch the complete notebook
+            DEBUG && console.log('Fetching parent notebook for note:', result.notebook_id)
+            const notebooks = await getUserNotebooks()
+            const notebook = notebooks.find((n) => n._id === result.notebook_id)
+
+            if (notebook) {
+              // Set notebook first
+              setSelectedNotebook(notebook)
+
+              // Then fetch and set section after a delay
+              setTimeout(async () => {
+                DEBUG && console.log('Fetching parent section for note:', result.section_id)
+                const sections = await getSections(result.notebook_id)
+                const section = sections.find((s) => s._id === result.section_id)
+
+                if (section) {
+                  setSelectedSection(section)
+
+                  // Fetch all notes to get the complete note with full content
+                  setTimeout(async () => {
+                    DEBUG && console.log('Fetching notes to get complete note data')
+                    const completeNotes = await getNotes(notebook._id, section._id)
+                    const completeNote = completeNotes.find((n) => n._id === result._id)
+
+                    if (completeNote) {
+                      DEBUG && console.log('Setting complete note from API:', completeNote)
+                      setSelectedNote(completeNote)
+                    } else {
+                      DEBUG && console.log('Complete note not found, using search result:', result)
+                      setSelectedNote(result)
+                    }
+                  }, 100)
+                }
+              }, 100)
+            }
+          }
+          break
+        default:
+          console.warn('Unknown result type:', result.type)
+      }
+    } catch (error) {
+      console.error('Error navigating to search result:', error)
+    }
+  }
 
   const handleInputChange = (e) => {
     setSearchQuery(e.target.value)
@@ -108,8 +219,8 @@ const SearchBar = () => {
       try {
         // Include selectedLabels in search
         const apiResults = await searchContent(searchQuery, selectedLabels)
-        console.log('API search results:', apiResults)
-        console.log('Used tags:', selectedLabels)
+        DEBUG && console.log('API search results:', apiResults)
+        DEBUG && console.log('Used tags:', selectedLabels)
         setSearchResults(apiResults)
         setOpen(true)
       } catch (error) {
@@ -227,14 +338,14 @@ const SearchBar = () => {
               <Box sx={{ p: 1.5, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
                 <Typography variant="subtitle2" display="flex" alignItems="center">
                   <LocalOfferIcon sx={{ fontSize: '1rem', mr: 1 }} />
-                  Available Tags
+                  Available Labels
                 </Typography>
               </Box>
 
               {/* Tag Search Input */}
               <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
                 <InputBase
-                  placeholder="Add tags to search... (Press Enter)"
+                  placeholder="Add labels to search... (Press Enter)"
                   value={tagSearchQuery}
                   onChange={handleTagSearchChange}
                   onKeyPress={handleTagSearchKeyPress}
@@ -305,11 +416,11 @@ const SearchBar = () => {
 
               <Divider />
 
-              <Box sx={{ p: 1.5 }}>
+              {/* <Box sx={{ p: 1.5 }}>
                 <Typography variant="body2" color="text.secondary">
                   Type a tag and press Enter to add it to your search
                 </Typography>
-              </Box>
+              </Box> */}
             </Paper>
           </Popper>
         )}
@@ -385,6 +496,7 @@ const SearchBar = () => {
                       key={result._id}
                       button
                       divider
+                      onClick={() => handleResultClick(result)} // result click handler
                       sx={{
                         '&:hover': { bgcolor: 'action.hover' }
                       }}
