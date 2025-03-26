@@ -160,3 +160,5 @@ export const updateNote = async (notebookId, sectionId, noteId, title, content) 
   
   return data;
 };
+
+// TODO: add deletion for sections, notes and notebooks
