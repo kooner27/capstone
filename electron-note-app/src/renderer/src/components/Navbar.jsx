@@ -17,6 +17,7 @@ import { useNotebookData } from './NotebookDataContext'
 import { useState, useRef, useEffect } from 'react'
 import SearchBar from './SearchBar'
 import ImportExport from './import-export/ImportExport'
+import RequirementsManager from './RequirementsManager' // Import RequirementsManager
 import Labels from './Labels'
 
 const Navbar = ({ toggleSidebar }) => {
@@ -283,6 +284,9 @@ const Navbar = ({ toggleSidebar }) => {
           {/* box for space between edit and import/logout */}
           <Box sx={{ flexGrow: 1 }} />
           <Labels />
+          
+          <RequirementsManager />
+          
           <ImportExport />
           <Divider
             orientation="vertical"

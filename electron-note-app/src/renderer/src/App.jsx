@@ -1,4 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import {
+  // change BrowserRouter to HashRouter
+  HashRouter as Router,
+  Routes,
+  Route,
+  Navigate
+} from 'react-router-dom';
+
 import SignIn from './components/sign-in/SignIn'
 import SignUp from './components/sign-up/SignUp'
 import Dashboard from './components/Dashboard'
@@ -19,33 +26,45 @@ function App() {
     <AppTheme>
       <Router>
         <Routes>
-          <Route 
-            path="/" 
-            element={isAuthenticated() ? <Navigate to="/applayout" /> : <Navigate to="/signin" />} 
+          <Route
+            path="/"
+            element={
+              isAuthenticated()
+                ? <Navigate to="/applayout" />
+                : <Navigate to="/signin" />
+            }
           />
-          <Route 
-            path="/signin" 
-            element={isAuthenticated() ? <Navigate to="/applayout" /> : <SignIn />} 
+          <Route
+            path="/signin"
+            element={
+              isAuthenticated()
+                ? <Navigate to="/applayout" />
+                : <SignIn />
+            }
           />
-          <Route 
-            path="/signup" 
-            element={isAuthenticated() ? <Navigate to="/applayout" /> : <SignUp />} 
+          <Route
+            path="/signup"
+            element={
+              isAuthenticated()
+                ? <Navigate to="/applayout" />
+                : <SignUp />
+            }
           />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/applayout" 
+          <Route
+            path="/applayout"
             element={
               <ProtectedRoute>
                 <AppLayout />
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
       </Router>
