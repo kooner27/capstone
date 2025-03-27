@@ -5,6 +5,8 @@ venv/
 __pycache__/
 *.pyc
 *.pyo
+.pytest_cache/
+.coverage
 
 # Ignore virtual environment
 venv/

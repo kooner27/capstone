@@ -15,27 +15,62 @@ from search import create_search_indexes, register_search_endpoint  # Import fun
 # Load environment variables from .env file
 load_dotenv()
 
-# initialize flask app
+# Initialize flask app
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-
 # Flask configuration
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "your_secret_key")
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/note_app")
-client = MongoClient(MONGO_URI)
-db = client["note_app"]
+app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/note_app")
 
-# Define collections
-users_collection = db["users"]
-notebooks_collection = db["notebooks"]
-sections_collection = db["sections"]
-notes_collection = db["notes"]
+# Global database variables
+db = None
+users_collection = None
+notebooks_collection = None
+sections_collection = None
+notes_collection = None
 
-# Create search indexes on startup
-create_search_indexes(db)
-# Register the search endpoint from search.py
-register_search_endpoint(app, notebooks_collection, sections_collection, notes_collection)
+# def init_db(app):
+#     """Initialize database connection and collections"""
+#     global db, users_collection, notebooks_collection, sections_collection, notes_collection
+    
+#     client = MongoClient(app.config["MONGO_URI"])
+#     db = client["note_app"]
+    
+#     # Define collections
+#     users_collection = db["users"]
+#     notebooks_collection = db["notebooks"]
+#     sections_collection = db["sections"]
+#     notes_collection = db["notes"]
+    
+#     # Create search indexes
+#     create_search_indexes(db)
+    
+#     return db
+
+def init_db(app):
+    global db, users_collection, notebooks_collection, sections_collection, notes_collection
+    
+    # Get URI from app config
+    mongo_uri = app.config["MONGO_URI"]
+    client = MongoClient(mongo_uri)
+    
+    # Extract database name from URI
+    db_name = mongo_uri.split("/")[-1]
+    db = client[db_name]
+    
+    # Define collections
+    users_collection = db["users"]
+    notebooks_collection = db["notebooks"]
+    sections_collection = db["sections"]
+    notes_collection = db["notes"]
+    
+ 
+    create_search_indexes(db)
+    
+    return db
+
+# Initialization calls are done at the end of the file
 
 # ------------------------------------------------------------------------------
 # API Status Endpoint
@@ -355,8 +390,21 @@ def get_all_user_labels(user_id):
     
     return jsonify({"labels": all_labels}), 200
 
+
+# Setup
+def setup_app():
+    """Setup function to initialize database and endpoints"""
+    with app.app_context():
+        init_db(app)
+    
+    # Register the search endpoint
+    register_search_endpoint(app, notebooks_collection, sections_collection, notes_collection)
+    
+    return app
+
 # ------------------------------------------------------------------------------
 # Run the Flask Application
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
+    setup_app()
     app.run(debug=True, port=5000)
