@@ -526,30 +526,6 @@ const ContentArea = () => {
     }
   }, [isEditMode, selectedNote])
 
-  // Generate default content for new notes
-  const generateDefaultContent = (title) => {
-    return `# ${title}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\nconsole.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three\n\n---\n\n[Visit Google](https://www.google.com)\n\n![Sample Image](https://via.placeholder.com/150)`
-  }
-
-  // Initialize new notes with default content
-  useEffect(() => {
-    if (selectedNote) {
-      let content = selectedNote.content || ''
-
-      if (!content && selectedNote.title) {
-        content = generateDefaultContent(selectedNote.title)
-        if (selectedNotebook && selectedSection) {
-          updateNote(
-            selectedNotebook._id,
-            selectedSection._id,
-            selectedNote._id,
-            selectedNote.title,
-            content
-          )
-        }
-      }
-    }
-  }, [selectedNote, selectedNotebook, selectedSection, updateNote])
 
   // Loading state
   if (isLoading && !selectedNote) {

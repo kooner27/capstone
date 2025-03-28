@@ -21,12 +21,17 @@ import Tooltip from '@mui/material/Tooltip'
 import Zoom from '@mui/material/Zoom'
 import AddIcon from '@mui/icons-material/Add'
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
-import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder'; // Add this line
+import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import FolderIcon from '@mui/icons-material/Folder'
 import StickyNote2Icon from '@mui/icons-material/StickyNote2'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+
+// Function to generate default content for new notes
+const generateDefaultContent = (title) => {
+  return `# ${title}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\nconsole.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three`
+}
 
 const Sidebar = () => {
   // Get selection state from NotebookContext
@@ -61,7 +66,8 @@ const Sidebar = () => {
   const [dialogSubmitEnabled, setDialogSubmitEnabled] = useState(false)
   
   useEffect(() => {
-    setDialogSubmitEnabled(newItemName.trim() !== '')
+    // Safely check if newItemName is a string before calling trim()
+    setDialogSubmitEnabled(typeof newItemName === 'string' && newItemName.trim() !== '')
   }, [newItemName])
 
   // Common list item styles
@@ -78,18 +84,17 @@ const Sidebar = () => {
 
   // Dialog handlers
   const handleOpenNotebookDialog = () => {
-    setNewItemName('')
+    setNewItemName('') // Explicitly set to empty string
     setIsNotebookDialogOpen(true)
   }
 
   const handleOpenSectionDialog = () => {
-    setNewItemName('')
+    setNewItemName('') // Explicitly set to empty string
     setIsSectionDialogOpen(true)
   }
 
   const handleOpenNoteDialog = () => {
-    console.log('fnnejnejfnefnjef')
-    setNewItemName('')
+    setNewItemName('') // Explicitly set to empty string
     setIsNoteDialogOpen(true)
   }
 
@@ -100,7 +105,8 @@ const Sidebar = () => {
   }
 
   const handleCreateNotebook = async () => {
-    if (newItemName.trim()) {
+    // Safely check if newItemName is a string before calling trim()
+    if (typeof newItemName === 'string' && newItemName.trim()) {
       // Show loading state could be added here
       const notebook = await createNotebook(newItemName.trim())
       if (notebook) {
@@ -111,7 +117,8 @@ const Sidebar = () => {
   }
 
   const handleCreateSection = async () => {
-    if (newItemName.trim() && selectedNotebook) {
+    // Safely check if newItemName is a string before calling trim()
+    if (typeof newItemName === 'string' && newItemName.trim() && selectedNotebook) {
       // Show loading state could be added here
       const section = await createSection(selectedNotebook._id, newItemName.trim())
       if (section) {
@@ -121,14 +128,21 @@ const Sidebar = () => {
     }
   }
 
+  // Modified to include default content on creation
   const handleCreateNote = async () => {
-    if (newItemName.trim() && selectedNotebook && selectedSection) {
-      // Show loading state could be added here
+    // Safely check if newItemName is a string before calling trim()
+    if (typeof newItemName === 'string' && newItemName.trim() && selectedNotebook && selectedSection) {
+      // Generate default content for the new note
+      const defaultContent = generateDefaultContent(newItemName.trim())
+      
+      // Create note with content already set
       const note = await createNote(
         selectedNotebook._id, 
         selectedSection._id, 
-        newItemName.trim()
+        newItemName.trim(),
+        defaultContent // Pass the default content here
       )
+      
       if (note) {
         setSelectedNote(note)
       }
@@ -309,7 +323,7 @@ const Sidebar = () => {
               onClick={handleCreateNotebook} 
               variant="contained" 
               color="primary"
-              disabled={!newItemName.trim()}
+              disabled={!dialogSubmitEnabled}
               sx={{ 
                 borderRadius: 1.5,
                 textTransform: 'none',
@@ -518,7 +532,7 @@ const Sidebar = () => {
               onClick={handleCreateSection} 
               variant="contained" 
               color="primary"
-              disabled={!newItemName.trim()}
+              disabled={!dialogSubmitEnabled}
               sx={{ 
                 borderRadius: 1.5,
                 textTransform: 'none',
@@ -693,7 +707,7 @@ const Sidebar = () => {
               onClick={handleCreateNote} 
               variant="contained" 
               color="primary"
-              disabled={!newItemName.trim()}
+              disabled={!dialogSubmitEnabled}
               sx={{ 
                 borderRadius: 1.5,
                 textTransform: 'none',
