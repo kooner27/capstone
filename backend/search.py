@@ -1,6 +1,12 @@
 from flask import jsonify, request
 from bson import ObjectId
 
+'''
+The code in this file is for handling FR24 in section 4.7
+and the functional requirements in section 4.5 of the SRS which are
+FR15, FR16, and FR17
+'''
+
 def create_search_indexes(db):
     """Create text indexes for search functionality"""
     db.notebooks.create_index([("name", "text")])
@@ -24,7 +30,7 @@ def search_all_content(user_id, query, notebooks_collection, sections_collection
     Search for query across notebooks, sections and notes
     Optional filtering by labels
     """
-    # Validate input - require either query or labels
+    # Validate input require either query or labels
     if not query and not labels:
         return {"message": "Search query or labels must be provided"}, 400
         
@@ -191,7 +197,7 @@ def search_all_content(user_id, query, notebooks_collection, sections_collection
     
     return response
 
-# Register the search endpoint with the Flask app
+# Register the endpoint
 def register_search_endpoint(app, notebooks_collection, sections_collection, notes_collection):
     """Register the search endpoint with the Flask app"""
     

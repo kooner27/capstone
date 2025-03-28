@@ -20,9 +20,9 @@ import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Zoom from '@mui/material/Zoom'
 import AddIcon from '@mui/icons-material/Add'
-import NoteAddIcon from '@mui/icons-material/NoteAdd';
-import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder'; // Add this line
-import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
+import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder' // Add this line
+import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import FolderIcon from '@mui/icons-material/Folder'
 import StickyNote2Icon from '@mui/icons-material/StickyNote2'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
@@ -56,10 +56,10 @@ const Sidebar = () => {
   const [isSectionDialogOpen, setIsSectionDialogOpen] = useState(false)
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false)
   const [newItemName, setNewItemName] = useState('')
-  
+
   // Handle keyboard shortcut (Enter) for dialogs
   const [dialogSubmitEnabled, setDialogSubmitEnabled] = useState(false)
-  
+
   useEffect(() => {
     setDialogSubmitEnabled(newItemName.trim() !== '')
   }, [newItemName])
@@ -155,11 +155,11 @@ const Sidebar = () => {
   // Loading and error states
   if (isLoading && !notebooks.length) {
     return (
-      <Box 
-        sx={{ 
-          width: 400, 
-          display: 'flex', 
-          justifyContent: 'center', 
+      <Box
+        sx={{
+          width: 400,
+          display: 'flex',
+          justifyContent: 'center',
           alignItems: 'center',
           height: '100%'
         }}
@@ -171,9 +171,9 @@ const Sidebar = () => {
 
   if (error && !notebooks.length) {
     return (
-      <Box 
-        sx={{ 
-          width: 400, 
+      <Box
+        sx={{
+          width: 400,
           p: 2,
           display: 'flex',
           flexDirection: 'column',
@@ -195,7 +195,9 @@ const Sidebar = () => {
         <Toolbar sx={{ minHeight: 56, px: 2, justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <BookmarkIcon fontSize="small" color="white" />
-            <Typography variant="subtitle2" noWrap sx={{ maxWidth: 110 }}>Notebooks</Typography>
+            <Typography variant="subtitle2" noWrap sx={{ maxWidth: 110 }}>
+              Notebooks
+            </Typography>
           </Box>
           <Tooltip title="Create new notebook" placement="bottom" TransitionComponent={Zoom}>
             <IconButton
@@ -204,7 +206,7 @@ const Sidebar = () => {
               sx={{
                 flexShrink: 0,
                 borderRadius: 1.5,
-                color: 'white',
+                color: 'white'
               }}
             >
               <NoteAddIcon />
@@ -228,9 +230,9 @@ const Sidebar = () => {
               <Box component="span" sx={{ mr: 1.5, display: 'flex', alignItems: 'center' }}>
                 <BookmarkIcon fontSize="small" color="primary" />
               </Box>
-              <ListItemText 
+              <ListItemText
                 primary={notebook.name}
-                primaryTypographyProps={{ 
+                primaryTypographyProps={{
                   noWrap: true,
                   fontWeight: 500,
                   fontSize: '0.875rem'
@@ -249,8 +251,8 @@ const Sidebar = () => {
         </List>
 
         {/* Create Notebook Dialog */}
-        <Dialog 
-          open={isNotebookDialogOpen} 
+        <Dialog
+          open={isNotebookDialogOpen}
           onClose={handleCloseDialogs}
           PaperProps={{
             sx: {
@@ -261,13 +263,15 @@ const Sidebar = () => {
             }
           }}
         >
-          <DialogTitle sx={{ 
-            py: 2,
-            px: 3, 
-            fontWeight: 600,
-            borderBottom: '1px solid',
-            borderColor: 'divider'
-          }}>
+          <DialogTitle
+            sx={{
+              py: 2,
+              px: 3,
+              fontWeight: 600,
+              borderBottom: '1px solid',
+              borderColor: 'divider'
+            }}
+          >
             Create New Notebook
           </DialogTitle>
           <DialogContent sx={{ pt: 4, pb: 4 }}>
@@ -282,31 +286,39 @@ const Sidebar = () => {
               onKeyPress={(e) => handleKeyPress(e, handleCreateNotebook)}
               sx={{ mb: 1, mt: 3 }}
               InputProps={{
-                startAdornment: <Box component="span" sx={{ mr: 1, display: 'flex' }}><BookmarkIcon sx={{ color: 'white' }} /></Box>,
+                startAdornment: (
+                  <Box component="span" sx={{ mr: 1, display: 'flex' }}>
+                    <BookmarkIcon sx={{ color: 'white' }} />
+                  </Box>
+                ),
                 sx: { borderRadius: 1.5 }
               }}
             />
-            <DialogContentText sx={{ 
-              mt: 3, 
-              mb: 2,
-              fontSize: '0.875rem', 
-              color: 'text.secondary',
-              fontStyle: 'italic'
-            }}>
+            <DialogContentText
+              sx={{
+                mt: 3,
+                mb: 2,
+                fontSize: '0.875rem',
+                color: 'text.secondary',
+                fontStyle: 'italic'
+              }}
+            >
               Create a notebook to organize your thoughts and ideas.
             </DialogContentText>
           </DialogContent>
-          <DialogActions sx={{ 
-            px: 3, 
-            pb: 4, 
-            pt: 2,
-            display: 'flex',
-            justifyContent: 'space-between'
-          }}>
-            <Button 
-              onClick={handleCloseDialogs} 
-              color="inherit" 
-              sx={{ 
+          <DialogActions
+            sx={{
+              px: 3,
+              pb: 4,
+              pt: 2,
+              display: 'flex',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Button
+              onClick={handleCloseDialogs}
+              color="inherit"
+              sx={{
                 borderRadius: 1.5,
                 textTransform: 'none',
                 fontWeight: 500
@@ -314,12 +326,12 @@ const Sidebar = () => {
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleCreateNotebook} 
-              variant="contained" 
+            <Button
+              onClick={handleCreateNotebook}
+              variant="contained"
               color="primary"
               disabled={!newItemName.trim()}
-              sx={{ 
+              sx={{
                 borderRadius: 1.5,
                 textTransform: 'none',
                 px: 3,
@@ -338,29 +350,36 @@ const Sidebar = () => {
   return (
     <Box sx={{ width: 600, display: 'flex' }}>
       {/* Sections Column */}
-      <Box sx={{ width: 300, 
-        borderRight: 1, 
-        borderColor: 'divider',
-        overflow: 'hidden'  // Ensure no overflow in the section column
-      }}>
-        <Toolbar sx={{ 
-          minHeight: 56, 
-          px: 2, 
-          display: 'flex',
-          justifyContent: 'space-between',
-          overflow: 'hidden' // Prevent toolbar overflow
-        }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            width: '100%',
-            gap: 1
-          }}>
+      <Box
+        sx={{
+          width: 300,
+          borderRight: 1,
+          borderColor: 'divider',
+          overflow: 'hidden' // Ensure no overflow in the section column
+        }}
+      >
+        <Toolbar
+          sx={{
+            minHeight: 56,
+            px: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            overflow: 'hidden' // Prevent toolbar overflow
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              gap: 1
+            }}
+          >
             <Tooltip title="Back to notebooks" placement="bottom">
               <IconButton
                 onClick={() => setSelectedNotebook(null)}
                 size="small"
-                sx={{ 
+                sx={{
                   flexShrink: 0,
                   color: 'white'
                 }}
@@ -368,17 +387,19 @@ const Sidebar = () => {
                 <ArrowBackIcon />
               </IconButton>
             </Tooltip>
-            <Box sx={{
-              flexGrow: 1,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-              maxWidth: 'calc(100% - 60px)' // Account for back button and spacing
-            }}>
-              <Typography 
-                variant="subtitle2" 
-                noWrap 
-                sx={{ 
+            <Box
+              sx={{
+                flexGrow: 1,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                maxWidth: 'calc(100% - 60px)' // Account for back button and spacing
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                noWrap
+                sx={{
                   display: 'inline-block',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -396,7 +417,7 @@ const Sidebar = () => {
               sx={{
                 flexShrink: 0,
                 borderRadius: 1.5,
-                color: 'white',
+                color: 'white'
               }}
             >
               <CreateNewFolderIcon />
@@ -427,20 +448,22 @@ const Sidebar = () => {
                   '&.Mui-selected': {
                     backgroundColor: 'action.selected',
                     '&:hover': {
-                      backgroundColor: 'action.hover',
+                      backgroundColor: 'action.hover'
                     }
                   }
                 }}
               >
                 <Box component="span" sx={{ mr: 1.5, display: 'flex', alignItems: 'center' }}>
-                  <FolderIcon 
-                    fontSize="small" 
-                    color={selectedSection && selectedSection._id === section._id ? "primary" : "action"} 
+                  <FolderIcon
+                    fontSize="small"
+                    color={
+                      selectedSection && selectedSection._id === section._id ? 'primary' : 'action'
+                    }
                   />
                 </Box>
-                <ListItemText 
+                <ListItemText
                   primary={section.title}
-                  primaryTypographyProps={{ 
+                  primaryTypographyProps={{
                     noWrap: true,
                     fontWeight: selectedSection && selectedSection._id === section._id ? 600 : 500,
                     fontSize: '0.875rem'
@@ -460,8 +483,8 @@ const Sidebar = () => {
         )}
 
         {/* Create Section Dialog */}
-        <Dialog 
-          open={isSectionDialogOpen} 
+        <Dialog
+          open={isSectionDialogOpen}
           onClose={handleCloseDialogs}
           PaperProps={{
             sx: {
@@ -471,13 +494,15 @@ const Sidebar = () => {
             }
           }}
         >
-          <DialogTitle sx={{ 
-            py: 2,
-            px: 3, 
-            fontWeight: 600,
-            borderBottom: '1px solid',
-            borderColor: 'divider'
-          }}>
+          <DialogTitle
+            sx={{
+              py: 2,
+              px: 3,
+              fontWeight: 600,
+              borderBottom: '1px solid',
+              borderColor: 'divider'
+            }}
+          >
             Create New Section
           </DialogTitle>
           <DialogContent sx={{ pt: 6, pb: 4 }}>
@@ -492,30 +517,38 @@ const Sidebar = () => {
               onKeyPress={(e) => handleKeyPress(e, handleCreateSection)}
               sx={{ mb: 1, mt: 3 }}
               InputProps={{
-                startAdornment: <Box component="span" sx={{ mr: 1, display: 'flex' }}><FolderIcon sx={{ color: 'white' }} /></Box>,
+                startAdornment: (
+                  <Box component="span" sx={{ mr: 1, display: 'flex' }}>
+                    <FolderIcon sx={{ color: 'white' }} />
+                  </Box>
+                ),
                 sx: { borderRadius: 1.5 }
               }}
             />
-            <DialogContentText sx={{ 
-              mt: 2, 
-              fontSize: '0.875rem', 
-              color: 'text.secondary',
-              fontStyle: 'italic'
-            }}>
+            <DialogContentText
+              sx={{
+                mt: 2,
+                fontSize: '0.875rem',
+                color: 'text.secondary',
+                fontStyle: 'italic'
+              }}
+            >
               Sections help you organize your notes within this notebook.
             </DialogContentText>
           </DialogContent>
-          <DialogActions sx={{ 
-            px: 3, 
-            pb: 3, 
-            pt: 1,
-            display: 'flex',
-            justifyContent: 'space-between'
-          }}>
-            <Button 
-              onClick={handleCloseDialogs} 
-              color="inherit" 
-              sx={{ 
+          <DialogActions
+            sx={{
+              px: 3,
+              pb: 3,
+              pt: 1,
+              display: 'flex',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Button
+              onClick={handleCloseDialogs}
+              color="inherit"
+              sx={{
                 borderRadius: 1.5,
                 textTransform: 'none',
                 fontWeight: 500
@@ -523,12 +556,12 @@ const Sidebar = () => {
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleCreateSection} 
-              variant="contained" 
+            <Button
+              onClick={handleCreateSection}
+              variant="contained"
               color="primary"
               disabled={!newItemName.trim()}
-              sx={{ 
+              sx={{
                 borderRadius: 1.5,
                 textTransform: 'none',
                 px: 3,
@@ -543,16 +576,18 @@ const Sidebar = () => {
 
       {/* Notes Column */}
       <Box sx={{ width: 300 }}>
-        <Toolbar sx={{ 
-          minHeight: 56, 
-          px: 2, 
-          display: 'flex',
-          justifyContent: 'space-between'
-        }}>
-          <Typography 
-            variant="subtitle2" 
+        <Toolbar
+          sx={{
+            minHeight: 56,
+            px: 2,
+            display: 'flex',
+            justifyContent: 'space-between'
+          }}
+        >
+          <Typography
+            variant="subtitle2"
             noWrap
-            sx={{ 
+            sx={{
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               maxWidth: 'calc(100% - 60px)' // Account for the New button
@@ -568,7 +603,7 @@ const Sidebar = () => {
                 sx={{
                   flexShrink: 0,
                   borderRadius: 1.5,
-                  color: 'white',
+                  color: 'white'
                 }}
               >
                 <LibraryAddIcon />
@@ -583,41 +618,42 @@ const Sidebar = () => {
           </Box>
         ) : (
           <List dense>
-            {selectedSection && notes.map((note) => (
-              <ListItem
-                button
-                key={note._id}
-                selected={selectedNote && selectedNote._id === note._id}
-                onClick={() => setSelectedNote(note)}
-                sx={{
-                  ...listItemStyles,
-                  borderRadius: 1,
-                  mx: 0.5,
-                  mb: 0.5,
-                  '&.Mui-selected': {
-                    backgroundColor: 'action.selected',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
+            {selectedSection &&
+              notes.map((note) => (
+                <ListItem
+                  button
+                  key={note._id}
+                  selected={selectedNote && selectedNote._id === note._id}
+                  onClick={() => setSelectedNote(note)}
+                  sx={{
+                    ...listItemStyles,
+                    borderRadius: 1,
+                    mx: 0.5,
+                    mb: 0.5,
+                    '&.Mui-selected': {
+                      backgroundColor: 'action.selected',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
                     }
-                  }
-                }}
-              >
-                <Box component="span" sx={{ mr: 1.5, display: 'flex', alignItems: 'center' }}>
-                  <StickyNote2Icon 
-                    fontSize="small" 
-                    color={selectedNote && selectedNote._id === note._id ? "primary" : "action"} 
-                  />
-                </Box>
-                <ListItemText 
-                  primary={note.title}
-                  primaryTypographyProps={{ 
-                    noWrap: true,
-                    fontWeight: selectedNote && selectedNote._id === note._id ? 600 : 500,
-                    fontSize: '0.875rem'
                   }}
-                />
-              </ListItem>
-            ))}
+                >
+                  <Box component="span" sx={{ mr: 1.5, display: 'flex', alignItems: 'center' }}>
+                    <StickyNote2Icon
+                      fontSize="small"
+                      color={selectedNote && selectedNote._id === note._id ? 'primary' : 'action'}
+                    />
+                  </Box>
+                  <ListItemText
+                    primary={note.title}
+                    primaryTypographyProps={{
+                      noWrap: true,
+                      fontWeight: selectedNote && selectedNote._id === note._id ? 600 : 500,
+                      fontSize: '0.875rem'
+                    }}
+                  />
+                </ListItem>
+              ))}
             {selectedSection && !notes.length && !isLoading && (
               <ListItem>
                 <ListItemText
@@ -635,8 +671,8 @@ const Sidebar = () => {
         )}
 
         {/* Create Note Dialog */}
-        <Dialog 
-          open={isNoteDialogOpen} 
+        <Dialog
+          open={isNoteDialogOpen}
           onClose={handleCloseDialogs}
           PaperProps={{
             sx: {
@@ -646,13 +682,15 @@ const Sidebar = () => {
             }
           }}
         >
-          <DialogTitle sx={{ 
-            py: 2,
-            px: 3, 
-            fontWeight: 600,
-            borderBottom: '1px solid',
-            borderColor: 'divider'
-          }}>
+          <DialogTitle
+            sx={{
+              py: 2,
+              px: 3,
+              fontWeight: 600,
+              borderBottom: '1px solid',
+              borderColor: 'divider'
+            }}
+          >
             Create New Note
           </DialogTitle>
           <DialogContent sx={{ pt: 3, pb: 2 }}>
@@ -667,30 +705,38 @@ const Sidebar = () => {
               onKeyPress={(e) => handleKeyPress(e, handleCreateNote)}
               sx={{ mb: 1, mt: 3 }}
               InputProps={{
-                startAdornment: <Box component="span" sx={{ mr: 1, display: 'flex' }}><StickyNote2Icon sx={{ color: 'white' }} /></Box>,
+                startAdornment: (
+                  <Box component="span" sx={{ mr: 1, display: 'flex' }}>
+                    <StickyNote2Icon sx={{ color: 'white' }} />
+                  </Box>
+                ),
                 sx: { borderRadius: 1.5 }
               }}
             />
-            <DialogContentText sx={{ 
-              mt: 2, 
-              fontSize: '0.875rem', 
-              color: 'text.secondary',
-              fontStyle: 'italic'
-            }}>
+            <DialogContentText
+              sx={{
+                mt: 2,
+                fontSize: '0.875rem',
+                color: 'text.secondary',
+                fontStyle: 'italic'
+              }}
+            >
               Notes will be created in the "{selectedSection?.title}" section.
             </DialogContentText>
           </DialogContent>
-          <DialogActions sx={{ 
-            px: 3, 
-            pb: 3, 
-            pt: 1,
-            display: 'flex',
-            justifyContent: 'space-between'
-          }}>
-            <Button 
-              onClick={handleCloseDialogs} 
-              color="inherit" 
-              sx={{ 
+          <DialogActions
+            sx={{
+              px: 3,
+              pb: 3,
+              pt: 1,
+              display: 'flex',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Button
+              onClick={handleCloseDialogs}
+              color="inherit"
+              sx={{
                 borderRadius: 1.5,
                 textTransform: 'none',
                 fontWeight: 500
@@ -698,12 +744,12 @@ const Sidebar = () => {
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleCreateNote} 
-              variant="contained" 
+            <Button
+              onClick={handleCreateNote}
+              variant="contained"
               color="primary"
               disabled={!newItemName.trim()}
-              sx={{ 
+              sx={{
                 borderRadius: 1.5,
                 textTransform: 'none',
                 px: 3,

@@ -10,32 +10,55 @@ from functools import wraps
 from bson import ObjectId 
 from search import create_search_indexes, register_search_endpoint  # Import functions from search.py
 
+'''
+The endpoints are organized and prefixed with comments mandating the inclusion of the code block
+by references functional requirements in our SRS.
+'''
+
 
 
 # Load environment variables from .env file
 load_dotenv()
 
-# initialize flask app
+# Initialize flask app
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-
 # Flask configuration
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "your_secret_key")
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/note_app")
-client = MongoClient(MONGO_URI)
-db = client["note_app"]
+app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/note_app")
 
-# Define collections
-users_collection = db["users"]
-notebooks_collection = db["notebooks"]
-sections_collection = db["sections"]
-notes_collection = db["notes"]
+# Global database variables
+db = None
+users_collection = None
+notebooks_collection = None
+sections_collection = None
+notes_collection = None
 
-# Create search indexes on startup
-create_search_indexes(db)
-# Register the search endpoint from search.py
-register_search_endpoint(app, notebooks_collection, sections_collection, notes_collection)
+# Init db function to make testing easier
+def init_db(app):
+    global db, users_collection, notebooks_collection, sections_collection, notes_collection
+    
+    # Get URI from app config
+    mongo_uri = app.config["MONGO_URI"]
+    client = MongoClient(mongo_uri)
+    
+    # Extract database name from URI
+    db_name = mongo_uri.split("/")[-1]
+    db = client[db_name]
+    
+    # Define collections
+    users_collection = db["users"]
+    notebooks_collection = db["notebooks"]
+    sections_collection = db["sections"]
+    notes_collection = db["notes"]
+    
+ 
+    create_search_indexes(db)
+    
+    return db
+
+# Initialization calls are done at the end of the file
 
 # ------------------------------------------------------------------------------
 # API Status Endpoint
@@ -46,6 +69,10 @@ def api_status():
 
 # ------------------------------------------------------------------------------
 # User Registration & Login Endpoints
+'''
+These endpoints handle the backend logic for the following functional requirements:
+FR1, FR2, FR3, FR4, and FR5 located in sections 4.1 and 4.2 of the SRS.
+'''
 # ------------------------------------------------------------------------------
 @app.route("/api/register", methods=["POST"])
 def register():
@@ -97,6 +124,10 @@ def get_all_users():
 
 # ------------------------------------------------------------------------------
 # User-Specific Endpoints: Notebooks → Sections → Notes
+'''
+The following endpoints implement the api logic for notebook hierarchy management mainly:
+FR11, FR12, FR13 located in section 4.4 of the SRS.
+'''
 # ------------------------------------------------------------------------------
 # --- Notebooks Endpoints ---
 @app.route("/api/users/<user_id>/notebooks", methods=["GET"])
@@ -202,6 +233,9 @@ def delete_section(user_id, notebook_id, section_id):
     notes_collection.delete_many({"section_id": section_id, "user_id": user_id})
     return jsonify({"message": "Section and its notes deleted"}), 200
 
+'''
+The following endpoints help implement FR6 and FR8 of section 4.3 Note Taking with Code Execution in the SRS.
+'''
 # --- Notes Endpoints ---
 @app.route("/api/users/<user_id>/notebooks/<notebook_id>/sections/<section_id>/notes", methods=["GET"])
 def get_notes(user_id, notebook_id, section_id):
@@ -274,6 +308,10 @@ def delete_note(user_id, notebook_id, section_id, note_id):
 
 # ------------------------------------------------------------------------------
 # Label-Specific Update Endpoints
+'''
+These endpoints are help implement the fucntional requirements listed in section 4.7 Labels for Organization in the SRS.
+They are used to implement FR22, FR23, FR25
+'''
 # ------------------------------------------------------------------------------
 
 # Update notebook labels
@@ -339,7 +377,7 @@ def update_note_labels(user_id, notebook_id, section_id, note_id):
 
 @app.route("/api/users/<user_id>/labels", methods=["GET"])
 def get_all_user_labels(user_id):
-    """Get all unique labels used across a user's notebooks, sections, and notes"""
+    # We need to get all unique labels across the objects
     
     notebook_labels = notebooks_collection.distinct("labels", {"user_id": user_id})
     
@@ -355,8 +393,20 @@ def get_all_user_labels(user_id):
     
     return jsonify({"labels": all_labels}), 200
 
+
+# Setup
+def setup_app():
+    with app.app_context():
+        init_db(app)
+    
+    # Register the search endpoint
+    register_search_endpoint(app, notebooks_collection, sections_collection, notes_collection)
+    
+    return app
+
 # ------------------------------------------------------------------------------
 # Run the Flask Application
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
+    setup_app()
     app.run(debug=True, port=5000)
