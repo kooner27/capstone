@@ -121,20 +121,29 @@ const Sidebar = () => {
     }
   }
 
+  const generateDefaultContent = (title) => {
+    return `# ${title}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\nconsole.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three`;
+  };
+
   const handleCreateNote = async () => {
     if (newItemName.trim() && selectedNotebook && selectedSection) {
-      // Show loading state could be added here
+      // Generate default content for the new note
+      const defaultContent = generateDefaultContent(newItemName.trim());
+      
+      // Create note with content already set
       const note = await createNote(
         selectedNotebook._id, 
         selectedSection._id, 
-        newItemName.trim()
-      )
+        newItemName.trim(),
+        defaultContent
+      );
+      
       if (note) {
-        setSelectedNote(note)
+        setSelectedNote(note);
       }
-      handleCloseDialogs()
+      handleCloseDialogs();
     }
-  }
+  };
   
   // Handle keyboard enter key for dialogs
   const handleKeyPress = (event, createFn) => {
