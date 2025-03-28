@@ -495,7 +495,7 @@ const ContentArea = () => {
 
       <Box
         sx={{
-          height: '700px',
+          height: '850px',
           overflowY: 'auto',
           pl: 0, // Remove left padding to align with title
           pr: 0, // Remove right padding
