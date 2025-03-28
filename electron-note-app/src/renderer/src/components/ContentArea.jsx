@@ -2,8 +2,208 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Box, Typography, Button, CircularProgress } from '@mui/material'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
-import CodeBlock from './CodeBlock' // Import the new CodeBlock component
+import CodeBlock from './CodeBlock' // Import the CodeBlock component
 const DEBUG = false
+
+// Helper function to safely access Electron shell API
+const openExternalLink = (url) => {
+  if (window.electron && window.electron.shell) {
+    window.electron.shell.openExternal(url)
+  } else if (window.require) {
+    try {
+      const { shell } = window.require('electron')
+      shell.openExternal(url)
+    } catch (error) {
+      console.error('Failed to access Electron shell:', error)
+      window.open(url, '_blank')
+    }
+  } else {
+    window.open(url, '_blank')
+  }
+}
+
+// Create a separate TextBlock component to properly handle hooks
+const TextBlock = ({ textBlock, index }) => {
+  const blockRef = useRef(null);
+  const formattedHtml = formatText(textBlock.content);
+
+  // Add click handler for external links
+  useEffect(() => {
+    if (blockRef.current) {
+      const links = blockRef.current.querySelectorAll('a.external-link');
+      
+      const handleLinkClick = (e) => {
+        e.preventDefault();
+        const href = e.currentTarget.getAttribute('href');
+        if (href) {
+          openExternalLink(href);
+        }
+      };
+      
+      links.forEach(link => {
+        link.addEventListener('click', handleLinkClick);
+      });
+      
+      return () => {
+        links.forEach(link => {
+          link.removeEventListener('click', handleLinkClick);
+        });
+      };
+    }
+  }, [textBlock.content]);
+
+  const customStyles = `
+    p { margin: 0 0 0.5em 0; }
+    p:last-child { margin-bottom: 0; }
+    h1 { 
+      margin-top: 1em; 
+      margin-bottom: 0.6em; 
+      font-weight: bold; 
+      font-size: 2em;
+    }
+    h2 { 
+      margin-top: 0.9em; 
+      margin-bottom: 0.5em; 
+      font-weight: bold;
+      font-size: 1.5em;
+    }
+    h3 { 
+      margin-top: 0.8em; 
+      margin-bottom: 0.4em; 
+      font-weight: bold;
+      font-size: 1.25em;
+    }
+    /* Make sure strong elements in headings appear properly bold */
+    h1 strong, h2 strong, h3 strong { 
+      font-weight: 900; 
+      color: inherit;
+    }
+    /* Ensure bold text is actually bold */
+    strong { 
+      font-weight: bold !important; 
+    }
+    /* Ensure italic text is actually italic */
+    em {
+      font-style: italic !important;
+    }
+    ul { margin-top: 0.3em; margin-bottom: 0.5em; padding-left: 1.5em; list-style-type: disc; }
+    li { margin-bottom: 0.2em; display: list-item; }
+    hr { margin: 1em 0; border: none; height: 1px; background-color: #ddd; }
+    img { max-width: 100%; height: auto; }
+    a.external-link { color: #0000EE; text-decoration: underline; cursor: pointer; }
+  `;
+
+  return (
+    <Box sx={{ my: 1 }}>
+      <style>{customStyles}</style>
+      <div ref={blockRef} dangerouslySetInnerHTML={{ __html: formattedHtml }} />
+    </Box>
+  );
+};
+
+// Define the formatText function outside so it can be used by the TextBlock component
+const formatText = (text) => {
+  // Process horizontal rules first
+  let formatted = text.replace(/^([-*=]{3,})$/gm, '<hr>');
+
+  // Split by paragraphs
+  const paragraphs = formatted.split(/\n\n+/);
+
+  return paragraphs
+    .map(paragraph => {
+      // Skip if this is just a horizontal rule
+      if (paragraph.trim() === '<hr>') {
+        return paragraph;
+      }
+
+      // Check if this paragraph is a list
+      const isList = paragraph.split('\n').some(line => line.trim().match(/^- /));
+
+      if (isList) {
+        const listItems = paragraph
+          .split('\n')
+          .map(line => {
+            const listMatch = line.trim().match(/^- (.*)/);
+            if (listMatch) {
+              // Process inline formatting within list items
+              const content = processInlineFormatting(listMatch[1]);
+              return `<li>${content}</li>`;
+            }
+            return line.trim() ? `<p>${processInlineFormatting(line)}</p>` : '';
+          })
+          .filter(item => item)
+          .join('');
+
+        if (listItems.includes('<li>')) {
+          return `<ul>${listItems}</ul>`;
+        }
+        return listItems;
+      }
+
+      // Process headings with inline formatting
+      let processed = paragraph;
+
+      // Handle headers with inline formatting
+      const h1Match = processed.match(/^# (.+)$/m);
+      if (h1Match) {
+        const headingContent = h1Match[1];
+        const formattedContent = processInlineFormatting(headingContent);
+        return `<h1>${formattedContent}</h1>`;
+      }
+
+      const h2Match = processed.match(/^## (.+)$/m);
+      if (h2Match) {
+        const headingContent = h2Match[1];
+        const formattedContent = processInlineFormatting(headingContent);
+        return `<h2>${formattedContent}</h2>`;
+      }
+
+      const h3Match = processed.match(/^### (.+)$/m);
+      if (h3Match) {
+        const headingContent = h3Match[1];
+        const formattedContent = processInlineFormatting(headingContent);
+        return `<h3>${formattedContent}</h3>`;
+      }
+
+      // If it's not a header, process inline formatting and wrap in paragraph
+      // Replace newlines with <br> for non-list paragraphs
+      processed = processed.replace(/\n/g, '<br>');
+      
+      // Process all inline formatting
+      processed = processInlineFormatting(processed);
+
+      // Wrap in paragraph if not already wrapped
+      if (
+        !processed.match(/^<(h[1-3]|ul|hr)>/) &&
+        !processed.trim().startsWith('<li>')
+      ) {
+        processed = `<p>${processed}</p>`;
+      }
+
+      return processed;
+    })
+    .join('');
+};
+
+// Move processInlineFormatting function outside components
+const processInlineFormatting = (text) => {
+  // Handle all inline formatting
+  let processed = text;
+
+  // Bold text - improved regex to handle bold correctly
+  processed = processed.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
+  
+  // Italic text - process after bold to avoid conflicts
+  processed = processed.replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
+  
+  // Images - process before links to avoid conflicts
+  processed = processed.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1">');
+  
+  // Links - add special class for external handling
+  processed = processed.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="external-link">$1</a>');
+  
+  return processed;
+};
 
 // MarkdownRenderer component with CodeBlock integration
 const MarkdownRenderer = ({ markdown }) => {
@@ -11,153 +211,80 @@ const MarkdownRenderer = ({ markdown }) => {
     console.log(
       '[DEBUG-MARKDOWN] Rendering markdown with content:',
       markdown ? (markdown.length > 50 ? markdown.substring(0, 50) + '...' : markdown) : 'empty'
-    )
+    );
 
   const parseMarkdown = (text) => {
-    const sections = []
-    let currentText = ''
-    let inCodeBlock = false
-    let codeLanguage = ''
-    let codeContent = ''
+    const sections = [];
+    let currentText = '';
+    let inCodeBlock = false;
+    let codeLanguage = '';
+    let codeContent = '';
 
-    const lines = text.split('\n')
+    const lines = text.split('\n');
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
+      const line = lines[i];
 
       if (line.startsWith('```')) {
         if (!inCodeBlock) {
           if (currentText) {
-            sections.push({ type: 'text', content: currentText })
-            currentText = ''
+            sections.push({ type: 'text', content: currentText });
+            currentText = '';
           }
 
-          codeLanguage = line.slice(3).trim()
-          codeContent = ''
-          inCodeBlock = true
+          codeLanguage = line.slice(3).trim();
+          codeContent = '';
+          inCodeBlock = true;
         } else {
           sections.push({
             type: 'code',
             language: codeLanguage,
             content: codeContent
-          })
-          codeLanguage = ''
-          codeContent = ''
-          inCodeBlock = false
+          });
+          codeLanguage = '';
+          codeContent = '';
+          inCodeBlock = false;
         }
       } else if (inCodeBlock) {
-        codeContent += (codeContent ? '\n' : '') + line
+        codeContent += (codeContent ? '\n' : '') + line;
       } else {
-        currentText += (currentText ? '\n' : '') + line
+        currentText += (currentText ? '\n' : '') + line;
       }
     }
 
     if (currentText) {
-      sections.push({ type: 'text', content: currentText })
+      sections.push({ type: 'text', content: currentText });
     }
 
     if (inCodeBlock && codeContent) {
-      sections.push({ type: 'text', content: '```' + codeLanguage + '\n' + codeContent })
+      sections.push({ type: 'text', content: '```' + codeLanguage + '\n' + codeContent });
     }
 
-    return sections
-  }
+    return sections;
+  };
 
-  const formatText = (text) => {
-    // First, separate all content by paragraph blocks
-    const paragraphs = text.split(/\n\n+/)
-
-    return paragraphs
-      .map((paragraph) => {
-        // Check if this paragraph is a list before replacing newlines
-        const isList = paragraph.split('\n').some((line) => line.trim().match(/^- /))
-
-        if (isList) {
-          // Process as a list
-          const listItems = paragraph
-            .split('\n')
-            .map((line) => {
-              // Check if line is actually a list item
-              if (line.trim().match(/^- (.*)/)) {
-                // Extract the content after the dash
-                const content = line.trim().replace(/^- (.*)/, '$1')
-                return `<li>${content}</li>`
-              }
-              // If it's not a list item but part of the list paragraph
-              // (like an introductory line before the list), wrap in a p tag
-              return line.trim() ? `<p>${line}</p>` : ''
-            })
-            .filter((item) => item) // Remove empty lines
-            .join('')
-
-          // If we found actual list items, wrap them in a ul
-          if (listItems.includes('<li>')) {
-            return `<ul>${listItems}</ul>`
-          }
-          return listItems
-        }
-
-        // For non-list paragraphs, process as before
-        let processedText = paragraph.replace(/\n/g, '<br>')
-
-        // Process formatting
-        processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>')
-        processedText = processedText.replace(/^#\s+(.*?)$/gm, '<h1>$1</h1>')
-        processedText = processedText.replace(/^##\s+(.*?)$/gm, '<h2>$1</h2>')
-        processedText = processedText.replace(/^###\s+(.*?)$/gm, '<h3>$1</h3>')
-        processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
-
-        // Only wrap in paragraph if not already a heading
-        if (
-          !processedText.match(/^<h[1-3]>/) &&
-          !processedText.match(/^<ul>/) &&
-          !processedText.trim().startsWith('<li>')
-        ) {
-          return '<p>' + processedText + '</p>'
-        }
-
-        return processedText
-      })
-      .join('')
-  }
-  
-  const renderTextBlock = (textBlock, index) => {
-    const formattedHtml = formatText(textBlock.content)
-
-    const customStyles = `
-      p { margin: 0 0 0.5em 0; }
-      p:last-child { margin-bottom: 0; }
-      h1, h2, h3 { margin-top: 0.8em; margin-bottom: 0.5em; }
-      ul { margin-top: 0.3em; margin-bottom: 0.5em; padding-left: 1.5em; }
-      li { margin-bottom: 0.2em; }
-    `
-
-    return (
-      <Box key={`text-${index}`} sx={{ my: 1 }}>
-        <style>{customStyles}</style>
-        <div dangerouslySetInnerHTML={{ __html: formattedHtml }} />
-      </Box>
-    )
-  }
-
-  const sections = parseMarkdown(markdown || '')
+  const sections = parseMarkdown(markdown || '');
 
   return (
     <Box>
-      {sections.map((section, index) => 
-        section.type === 'code' 
-          ? <CodeBlock 
+      {sections.map((section, index) => {
+        if (section.type === 'code') {
+          return (
+            <CodeBlock 
               key={`code-${index}`}
               code={section.content}
               language={section.language}
               index={index}
-            /> 
-          : renderTextBlock(section, index)
-      )}
+            />
+          );
+        } else {
+          // Use the TextBlock component instead of calling a function
+          return <TextBlock key={`text-${index}`} textBlock={section} index={index} />;
+        }
+      })}
     </Box>
-  )
-}
+  );
+};
 
 const ContentArea = () => {
   DEBUG && console.log('[DEBUG] ContentArea component rendering')
@@ -401,7 +528,7 @@ const ContentArea = () => {
 
   // Generate default content for new notes
   const generateDefaultContent = (title) => {
-    return `# ${title}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\nconsole.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three`
+    return `# ${title}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\nconsole.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three\n\n---\n\n[Visit Google](https://www.google.com)\n\n![Sample Image](https://via.placeholder.com/150)`
   }
 
   // Initialize new notes with default content
