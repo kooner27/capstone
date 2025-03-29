@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 const CodeBlock = ({ code, language, index }) => {
   const [executionResult, setExecutionResult] = useState(null);
@@ -280,52 +281,77 @@ const CodeBlock = ({ code, language, index }) => {
       my: 2, 
       borderRadius: 1,
       position: 'relative',
-      fontFamily: 'monospace',
+      fontFamily: '"JetBrains Mono", "Fira Code", "Source Code Pro", Consolas, Monaco, "Andale Mono", monospace',
       whiteSpace: 'pre-wrap'
     }}>
-      {/* Language tag */}
-      {language && (
-        <Typography variant="caption" sx={{ 
-          position: 'absolute', 
-          top: 0, 
-          right: 0, 
-          p: 1,
-          color: '#61afef'
-        }}>
-          {language}
-        </Typography>
-      )}
+      {/* Header area with language tag and run button */}
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 1
+      }}>
+        {/* Language tag */}
+        {language && (
+          <Typography variant="caption" sx={{ 
+            color: '#61afef',
+            fontWeight: 'medium'
+          }}>
+            {language}
+          </Typography>
+        )}
+        
+        {/* Python environment indicator for Python blocks */}
+        {language && language.toLowerCase() === 'python' && venvStatus.checked && (
+          <Typography variant="caption" sx={{ 
+            display: 'inline-block',
+            ml: 'auto',
+            mr: 2,
+            color: venvStatus.available ? '#98c379' : '#d19a66',
+            fontSize: '0.7rem'
+          }}>
+            {venvStatus.available 
+              ? '🟢 Using virtual environment' 
+              : '⚠️ Using system Python (No virtual environment)'}
+          </Typography>
+        )}
+        
+        {/* Run button */}
+        <Tooltip title={`Run ${language || 'code'}`}>
+          <Box sx={{ display: 'inline-flex' }}>
+            <IconButton 
+              size="small"
+              onClick={handleRunCode}
+              disabled={isExecuting}
+              sx={{ 
+                color: '#abb2bf',
+                backgroundColor: 'rgba(97, 175, 239, 0.1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(97, 175, 239, 0.2)',
+                }
+              }}
+            >
+              {isExecuting ? (
+                <CircularProgress size={18} sx={{ color: '#61afef' }} />
+              ) : (
+                <PlayArrowIcon sx={{ color: '#61afef' }} />
+              )}
+            </IconButton>
+          </Box>
+        </Tooltip>
+      </Box>
       
       {/* Code content */}
-      <Typography component="pre" sx={{ m: 0, color: '#abb2bf', overflowX: 'auto' }}>
+      <Typography component="pre" sx={{ 
+        m: 0, 
+        color: '#abb2bf', 
+        overflowX: 'auto',
+        fontFamily: 'inherit',
+        fontSize: '0.9rem',
+        lineHeight: 1.5
+      }}>
         {code}
       </Typography>
-      
-      {/* Python environment indicator for Python blocks */}
-      {language && language.toLowerCase() === 'python' && venvStatus.checked && (
-        <Typography variant="caption" sx={{ 
-          display: 'inline-block',
-          mt: 1,
-          color: venvStatus.available ? '#98c379' : '#d19a66',
-          fontSize: '0.7rem'
-        }}>
-          {venvStatus.available 
-            ? '🟢 Using virtual environment' 
-            : '⚠️ Using system Python (No virtual environment)'}
-        </Typography>
-      )}
-      
-      {/* Run button */}
-      <Button 
-        variant="contained" 
-        size="small" 
-        onClick={handleRunCode}
-        disabled={isExecuting}
-        startIcon={isExecuting ? <CircularProgress size={14} color="inherit" /> : null}
-        sx={{ mt: 1, ml: language && language.toLowerCase() === 'python' ? 2 : 0 }}
-      >
-        {isExecuting ? 'Running...' : 'Run'}
-      </Button>
       
       {/* Results section */}
       {executionResult && (
@@ -373,7 +399,7 @@ const CodeBlock = ({ code, language, index }) => {
                   <Typography key={i} variant="body2" sx={{ 
                     color: getLogColor(log.type),
                     fontSize: '0.85rem',
-                    fontFamily: 'monospace',
+                    fontFamily: 'inherit',
                     whiteSpace: 'pre-wrap'
                   }}>
                     {log.type === 'error' ? '🔴 ' : log.type === 'warn' ? '⚠️ ' : ''}

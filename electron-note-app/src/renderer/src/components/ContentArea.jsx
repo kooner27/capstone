@@ -205,7 +205,7 @@ const processInlineFormatting = (text) => {
   return processed;
 };
 
-// MarkdownRenderer component with CodeBlock integration
+// MarkdownRenderer component with improved code block detection
 const MarkdownRenderer = ({ markdown }) => {
   DEBUG &&
     console.log(
@@ -214,28 +214,44 @@ const MarkdownRenderer = ({ markdown }) => {
     );
 
   const parseMarkdown = (text) => {
+    if (!text) return [];
+    
+    // Step 1: Process and normalize the text
+    let normalizedText = text;
+    
+    // Fix for inline code blocks: Handle cases where code blocks are on a single line with text
+    // This specifically handles the pattern: Text ```language code code code```
+    const inlineCodeBlockRegex = /^(.*?)\s+```(\w*)\s+(.*?)\s+```\s*$/gm;
+    normalizedText = normalizedText.replace(inlineCodeBlockRegex, (match, prefix, lang, code) => {
+      return `${prefix}\n\`\`\`${lang}\n${code}\n\`\`\`\n`;
+    });
+    
+    // Step 2: Now we can safely parse the normalized text
     const sections = [];
     let currentText = '';
     let inCodeBlock = false;
     let codeLanguage = '';
     let codeContent = '';
 
-    const lines = text.split('\n');
+    const lines = normalizedText.split('\n');
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      // Check for code blocks even with indentation
+      const trimmedLine = line.trim();
 
-      if (line.startsWith('```')) {
+      if (trimmedLine.startsWith('```')) {
         if (!inCodeBlock) {
           if (currentText) {
             sections.push({ type: 'text', content: currentText });
             currentText = '';
           }
 
-          codeLanguage = line.slice(3).trim();
+          codeLanguage = trimmedLine.slice(3).trim();
           codeContent = '';
           inCodeBlock = true;
         } else {
+          // End of code block - create a code section
           sections.push({
             type: 'code',
             language: codeLanguage,
@@ -246,16 +262,20 @@ const MarkdownRenderer = ({ markdown }) => {
           inCodeBlock = false;
         }
       } else if (inCodeBlock) {
+        // Inside a code block - accumulate code content
         codeContent += (codeContent ? '\n' : '') + line;
       } else {
+        // Outside a code block - accumulate text content
         currentText += (currentText ? '\n' : '') + line;
       }
     }
 
+    // Handle any remaining text
     if (currentText) {
       sections.push({ type: 'text', content: currentText });
     }
 
+    // Handle unclosed code blocks
     if (inCodeBlock && codeContent) {
       sections.push({ type: 'text', content: '```' + codeLanguage + '\n' + codeContent });
     }
