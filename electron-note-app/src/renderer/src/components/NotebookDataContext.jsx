@@ -9,21 +9,17 @@ import {
   updateNote as apiUpdateNote
 } from '../api/notebook'
 
-// Create context for notebook data operations
 const NotebookDataContext = createContext()
 
-// Custom hook to use the notebook data context
 export const useNotebookData = () => useContext(NotebookDataContext)
 
 export const NotebookDataProvider = ({ children }) => {
-  // API data state
   const [notebooks, setNotebooks] = useState([])
   const [sections, setSections] = useState([])
   const [notes, setNotes] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Fetch data operations
   const fetchNotebooks = async () => {
     setIsLoading(true)
     setError(null)
@@ -76,7 +72,6 @@ export const NotebookDataProvider = ({ children }) => {
     }
   }
 
-  // CRUD operations
   const createNotebook = async (name) => {
     setIsLoading(true)
     setError(null)
@@ -129,7 +124,6 @@ export const NotebookDataProvider = ({ children }) => {
     }
   }
 
-  // MODIFIED: Enhanced updateNote with better logging
   const updateNote = async (notebookId, sectionId, noteId, title, content) => {
     if (!notebookId || !sectionId || !noteId) {
       console.error('Missing required parameters for updateNote:', {
@@ -140,7 +134,6 @@ export const NotebookDataProvider = ({ children }) => {
       return false
     }
 
-    // Add validation for content
     if (content === undefined || content === null) {
       console.error('Attempted to update note with undefined/null content')
       return false
@@ -152,10 +145,8 @@ export const NotebookDataProvider = ({ children }) => {
     try {
       console.log('Sending note update to API with content:', content)
 
-      // Make the API call to update the note
       await apiUpdateNote(notebookId, sectionId, noteId, title, content)
 
-      // Update local state
       setNotes((prev) => prev.map((n) => (n._id === noteId ? { ...n, title, content } : n)))
 
       console.log('Note updated successfully')
@@ -169,15 +160,13 @@ export const NotebookDataProvider = ({ children }) => {
     }
   }
 
-  // Context value
   const value = {
-    // Data
     notebooks,
     sections,
     notes,
     isLoading,
     error,
-    // API operations
+
     fetchNotebooks,
     fetchSections,
     fetchNotes,

@@ -7,11 +7,9 @@ import { spawn } from 'child_process'
 import path from 'path'
 import os from 'os'
 
-// Define constants for virtual environment
 const APP_DATA_DIR = path.join(os.homedir(), '.twonote');
 const VENV_DIR = path.join(APP_DATA_DIR, 'venv');
 
-// Ensure app data directory exists
 function ensureAppDataDir() {
   if (!fs.existsSync(APP_DATA_DIR)) {
     fs.mkdirSync(APP_DATA_DIR, { recursive: true });

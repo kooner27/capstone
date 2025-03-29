@@ -17,7 +17,7 @@ import { useNotebookData } from './NotebookDataContext'
 import { useState, useRef, useEffect } from 'react'
 import SearchBar from './SearchBar'
 import ImportExport from './import-export/ImportExport'
-import RequirementsManager from './RequirementsManager' // Import RequirementsManager
+import RequirementsManager from './RequirementsManager'
 import Labels from './Labels'
 
 const Navbar = ({ toggleSidebar }) => {
@@ -48,7 +48,6 @@ const Navbar = ({ toggleSidebar }) => {
     setSelectedNote
   } = useNotebook()
 
-  // Log current state for debugging
   DEBUG &&
     console.log('[DEBUG-NAVBAR] Current state:', {
       isEditMode,
@@ -74,11 +73,9 @@ const Navbar = ({ toggleSidebar }) => {
 
     if (isEditMode) {
       if (isPreviewMode) {
-        // If we're in preview mode, go back to edit mode
         DEBUG && console.log('[DEBUG-NAVBAR] Switching from preview mode to edit mode')
         setIsPreviewMode(false)
       } else {
-        // We're in edit mode but not preview mode
         DEBUG && console.log('[DEBUG-NAVBAR] Exiting edit mode via toggleEditMode')
         toggleEditMode()
       }
@@ -88,22 +85,18 @@ const Navbar = ({ toggleSidebar }) => {
     }
   }
 
-  // Enhanced save with debug logging
   const handleSaveClick = () => {
     DEBUG && console.log('[DEBUG-NAVBAR] Save button clicked')
     DEBUG && console.log('[DEBUG-NAVBAR] Current isEditMode:', isEditMode)
     DEBUG && console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode)
     DEBUG && console.log('[DEBUG-NAVBAR] Has selectedNote:', !!selectedNote)
 
-    // First ensure we have the latest content from the editor
     if (selectedNote && isEditMode && !isPreviewMode) {
       DEBUG && console.log('[DEBUG-NAVBAR] Attempting to capture current editor content')
 
-      // Try to directly access the editable element to get absolutely current content
       const editorElement = document.querySelector('[contenteditable=true]')
 
       if (editorElement) {
-        // Get the content directly from the DOM
         const currentContent = editorElement.innerText || ''
         DEBUG &&
           console.log(
@@ -111,7 +104,6 @@ const Navbar = ({ toggleSidebar }) => {
             currentContent.length > 50 ? currentContent.substring(0, 50) + '...' : currentContent
           )
 
-        // Compare with current note content
         DEBUG &&
           console.log(
             '[DEBUG-NAVBAR] Current note content:',
@@ -122,7 +114,6 @@ const Navbar = ({ toggleSidebar }) => {
               : 'empty'
           )
 
-        // Update the note with current content before saving
         if (currentContent !== selectedNote.content) {
           DEBUG &&
             console.log('[DEBUG-NAVBAR] Content changed, updating note with current editor content')
@@ -135,7 +126,6 @@ const Navbar = ({ toggleSidebar }) => {
         DEBUG && console.log('[DEBUG-NAVBAR] Could not find editable element')
       }
 
-      // Now save with the updated note
       DEBUG && console.log('[DEBUG-NAVBAR] Calling saveContent')
       if (saveContent()) {
         DEBUG && console.log('[DEBUG-NAVBAR] Save successful, showing message')
@@ -144,7 +134,6 @@ const Navbar = ({ toggleSidebar }) => {
         DEBUG && console.log('[DEBUG-NAVBAR] Save failed')
       }
     } else {
-      // Fallback to regular save
       DEBUG && console.log('[DEBUG-NAVBAR] Using fallback save method')
       if (saveContent()) {
         DEBUG && console.log('[DEBUG-NAVBAR] Fallback save successful, showing message')
@@ -161,7 +150,6 @@ const Navbar = ({ toggleSidebar }) => {
     DEBUG && console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode)
     DEBUG && console.log('[DEBUG-NAVBAR] Current selectedNote:', selectedNote?._id)
 
-    // Call cancelEdit and log the return value
     DEBUG && console.log('[DEBUG-NAVBAR] Calling cancelEdit')
     cancelEdit()
     DEBUG && console.log('[DEBUG-NAVBAR] Returned from cancelEdit')
@@ -173,7 +161,6 @@ const Navbar = ({ toggleSidebar }) => {
     DEBUG && console.log('[DEBUG-NAVBAR] Current isPreviewMode:', isPreviewMode)
 
     if (isEditMode) {
-      // Before switching to preview, make sure we capture latest content
       DEBUG && console.log('[DEBUG-NAVBAR] Attempting to capture current content before preview')
       const editorElement = document.querySelector('[contenteditable=true]')
       if (editorElement && selectedNote) {
@@ -226,7 +213,7 @@ const Navbar = ({ toggleSidebar }) => {
             TwoNote
           </Typography>
 
-          {/* Added a spacer to move SearchBar right */}
+          {}
           <Box sx={{ flexGrow: 0.1 }} />
           <SearchBar />
 
@@ -281,12 +268,12 @@ const Navbar = ({ toggleSidebar }) => {
               View
             </Button>
           </Box>
-          {/* box for space between edit and import/logout */}
+          {}
           <Box sx={{ flexGrow: 1 }} />
           <Labels />
-          
+
           <RequirementsManager />
-          
+
           <ImportExport />
           <Divider
             orientation="vertical"

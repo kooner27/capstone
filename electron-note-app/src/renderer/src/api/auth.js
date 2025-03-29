@@ -53,7 +53,6 @@ export const getCurrentUser = () => {
     
     return {
       id: payload.user_id,
-      // You can add more user properties here if they're included in the JWT
     };
   } catch (error) {
     console.error('Error extracting user data from token:', error);

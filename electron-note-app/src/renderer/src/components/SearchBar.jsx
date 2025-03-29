@@ -24,7 +24,7 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import BookmarkBorderOutlinedIcon from '@mui/icons-material/BookmarkBorderOutlined'
 import { searchContent } from '../api/search'
-import { useNotebook } from './NotebookContext' // we will need to update the state on search result click
+import { useNotebook } from './NotebookContext'
 import { getUserNotebooks, getSections, getNotes } from '../api/notebook'
 import { fetchUserLabels } from '../api/labels'
 
@@ -37,43 +37,16 @@ const SearchBar = () => {
   const [tagSearchQuery, setTagSearchQuery] = useState('')
   const searchRef = useRef(null)
 
-  // state for api
   const [loading, setLoading] = useState(false)
   const [searchResults, setSearchResults] = useState(null)
   const [error, setError] = useState(null)
 
-  // state for selected labels / tags
   const [selectedLabels, setSelectedLabels] = useState([])
 
-  // Sample available tags, fetch them later
-  // const availableTags = [
-  //   'work',
-  //   'personal',
-  //   'important',
-  //   'todo',
-  //   'meeting',
-  //   'idea',
-  //   'research',
-  //   'followup',
-  //   'archived',
-  //   'project',
-  //   'review',
-  //   'daily',
-  //   'weekly',
-  //   'development',
-  //   'planning',
-  //   'design',
-  //   'ui',
-  //   'feedback',
-  //   'bug',
-  //   'feature'
-  // ]
   const [availableTags, setAvailableTags] = useState([])
-  // We can conditionally have a lodaing circle or something if fetching tags takes too long
-  // For now it is pretty fast so we will not be conditionally rendering a loading animation or something
+
   const [loadingTags, setLoadingTags] = useState(false)
 
-  // Fetch available tags on component mount
   useEffect(() => {
     const loadTags = async () => {
       try {
@@ -82,7 +55,7 @@ const SearchBar = () => {
         setAvailableTags(userTags)
       } catch (error) {
         console.error('Error fetching user tags:', error)
-        // Fall back to empty array if fetch fails
+
         setAvailableTags([])
       } finally {
         setLoadingTags(false)
@@ -90,36 +63,29 @@ const SearchBar = () => {
     }
 
     loadTags()
-  }, []) // Empty dependency array means this runs once on mount
+  }, [])
 
   const { setSelectedNotebook, setSelectedSection, setSelectedNote } = useNotebook()
 
-  // Handle click on the search result
-  // We need to set the correct selection state based on what they clicked
-  // Fetch the notebook/section/note and set it
   const handleResultClick = async (result) => {
     DEBUG && console.log('Search result clicked:', result)
-    setOpen(false) // close the dropdown
+    setOpen(false)
 
     try {
       switch (result.type) {
         case 'notebook':
-          // For notebooks, we can use the search result directly, since the objects are basically the same
           setSelectedNotebook(result)
           break
 
         case 'section':
           if (result.notebook_id) {
-            // First, fetch the complete notebook
             DEBUG && console.log('Fetching parent notebook for section:', result.notebook_id)
             const notebooks = await getUserNotebooks()
             const notebook = notebooks.find((n) => n._id === result.notebook_id)
 
             if (notebook) {
-              // Set notebook first
               setSelectedNotebook(notebook)
 
-              // Wait for effects to complete before setting section
               setTimeout(() => {
                 DEBUG && console.log('Setting section from search:', result)
                 setSelectedSection(result)
@@ -130,16 +96,13 @@ const SearchBar = () => {
 
         case 'note':
           if (result.notebook_id && result.section_id) {
-            // First fetch the complete notebook
             DEBUG && console.log('Fetching parent notebook for note:', result.notebook_id)
             const notebooks = await getUserNotebooks()
             const notebook = notebooks.find((n) => n._id === result.notebook_id)
 
             if (notebook) {
-              // Set notebook first
               setSelectedNotebook(notebook)
 
-              // Then fetch and set section after a delay
               setTimeout(async () => {
                 DEBUG && console.log('Fetching parent section for note:', result.section_id)
                 const sections = await getSections(result.notebook_id)
@@ -148,7 +111,6 @@ const SearchBar = () => {
                 if (section) {
                   setSelectedSection(section)
 
-                  // Fetch all notes to get the complete note with full content
                   setTimeout(async () => {
                     DEBUG && console.log('Fetching notes to get complete note data')
                     const completeNotes = await getNotes(notebook._id, section._id)
@@ -186,30 +148,26 @@ const SearchBar = () => {
     setTagSearchQuery(e.target.value)
   }
 
-  // handler for tag input enter
   const handleTagSearchKeyPress = (e) => {
     if (e.key === 'Enter' && tagSearchQuery.trim()) {
       const tag = tagSearchQuery.trim().toLowerCase()
       if (!selectedLabels.includes(tag)) {
         setSelectedLabels([...selectedLabels, tag])
       }
-      setTagSearchQuery('') // Clear input after adding
+      setTagSearchQuery('')
     }
   }
 
-  // remove tag handler
   const handleRemoveTag = (tagToRemove) => {
     setSelectedLabels(selectedLabels.filter((tag) => tag !== tagToRemove))
   }
 
-  // Handle click on search field to show tags
   const handleSearchClick = () => {
     if (!open) {
       setShowTagDropdown(true)
     }
   }
 
-  // Search when Enter is pressed
   const handleKeyPress = async (e) => {
     if (e.key === 'Enter' && (searchQuery.trim() !== '' || selectedLabels.length > 0)) {
       setShowTagDropdown(false)
@@ -217,7 +175,6 @@ const SearchBar = () => {
       setError(null)
 
       try {
-        // Include selectedLabels in search
         const apiResults = await searchContent(searchQuery, selectedLabels)
         DEBUG && console.log('API search results:', apiResults)
         DEBUG && console.log('Used tags:', selectedLabels)
@@ -234,7 +191,7 @@ const SearchBar = () => {
 
   const handleClearSearch = () => {
     setSearchQuery('')
-    setSelectedLabels([]) // Also clear selected tags
+    setSelectedLabels([])
     setOpen(false)
     setSearchResults(null)
   }
@@ -257,11 +214,9 @@ const SearchBar = () => {
     }
   }
 
-  // Function to get combined results for display
   const getAllResults = () => {
     if (!searchResults || !searchResults.results) return []
 
-    // Combine all types of results
     return [
       ...(searchResults.results.notebooks || []),
       ...(searchResults.results.sections || []),
@@ -313,7 +268,7 @@ const SearchBar = () => {
           }}
         />
 
-        {/* Tag Dropdown */}
+        {}
         {showTagDropdown && !open && (
           <Popper
             open={true}
@@ -342,7 +297,7 @@ const SearchBar = () => {
                 </Typography>
               </Box>
 
-              {/* Tag Search Input */}
+              {}
               <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
                 <InputBase
                   placeholder="Add labels to search... (Press Enter)"
@@ -365,7 +320,7 @@ const SearchBar = () => {
                 />
               </Box>
 
-              {/* Selected Tags Display */}
+              {}
               {selectedLabels.length > 0 && (
                 <Box sx={{ p: 1, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
                   <Typography
@@ -390,7 +345,7 @@ const SearchBar = () => {
                 </Box>
               )}
 
-              {/* Tag List  */}
+              {}
               <Box
                 sx={{
                   p: 1,
@@ -416,16 +371,12 @@ const SearchBar = () => {
 
               <Divider />
 
-              {/* <Box sx={{ p: 1.5 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Type a tag and press Enter to add it to your search
-                </Typography>
-              </Box> */}
+              {}
             </Paper>
           </Popper>
         )}
 
-        {/* Search Results  */}
+        {}
         {open && (
           <Popper
             open={open}
@@ -496,7 +447,7 @@ const SearchBar = () => {
                       key={result._id}
                       button
                       divider
-                      onClick={() => handleResultClick(result)} // result click handler
+                      onClick={() => handleResultClick(result)}
                       sx={{
                         '&:hover': { bgcolor: 'action.hover' }
                       }}
@@ -527,7 +478,7 @@ const SearchBar = () => {
                           />
                         </Box>
 
-                        {/* Display content preview for notes */}
+                        {}
                         {result.content_preview && (
                           <Typography
                             variant="body2"
@@ -546,7 +497,7 @@ const SearchBar = () => {
                           </Typography>
                         )}
 
-                        {/* Display labels if available */}
+                        {}
                         {result.labels && result.labels.length > 0 && (
                           <Box sx={{ pl: 4.5, mt: 0.5, display: 'flex', flexWrap: 'wrap' }}>
                             {result.labels.map((label) => (

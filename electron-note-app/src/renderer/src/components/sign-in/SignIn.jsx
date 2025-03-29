@@ -7,11 +7,11 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Divider from '@mui/material/Divider'
 import FormLabel from '@mui/material/FormLabel'
 import FormControl from '@mui/material/FormControl'
-// modified
+
 import { Link as RouterLink } from 'react-router-dom'
 import Link from '@mui/material/Link'
 import { useNavigate } from 'react-router-dom'
-//
+
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
@@ -21,7 +21,7 @@ import ForgotPassword from './components/ForgotPassword'
 import AppTheme from '../shared-theme/AppTheme'
 import ColorModeSelect from '../shared-theme/ColorModeSelect'
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons'
-// modified
+
 import { loginUser } from '../../api/auth'
 
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -66,14 +66,13 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 
 export default function SignIn(props) {
   const navigate = useNavigate()
-  // const [emailError, setEmailError] = React.useState(false)
-  // const [emailErrorMessage, setEmailErrorMessage] = React.useState('')
+
   const [nameError, setNameError] = React.useState(false)
   const [nameErrorMessage, setNameErrorMessage] = React.useState('')
   const [passwordError, setPasswordError] = React.useState(false)
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('')
   const [open, setOpen] = React.useState(false)
-  const [successMessage, setSuccessMessage] = React.useState('') // for conditionally rendering success message
+  const [successMessage, setSuccessMessage] = React.useState('')
 
   const handleClickOpen = () => {
     setOpen(true)
@@ -82,20 +81,6 @@ export default function SignIn(props) {
   const handleClose = () => {
     setOpen(false)
   }
-
-  // const handleSubmit = (event) => {
-  //   if (emailError || passwordError) {
-  //     event.preventDefault()
-  //     return
-  //   }
-  //   const data = new FormData(event.currentTarget)
-  //   console.log({
-  //     email: data.get('email'),
-  //     password: data.get('password')
-  //   })
-
-  //   navigate('/dashboard')
-  // }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -110,7 +95,6 @@ export default function SignIn(props) {
     try {
       const responseData = await loginUser(user)
 
-      // Store JWT in localStorage
       localStorage.setItem('token', responseData.token)
       setSuccessMessage('Login successful! Redirecting...')
       setTimeout(() => {
@@ -122,20 +106,11 @@ export default function SignIn(props) {
   }
 
   const validateInputs = () => {
-    // const email = document.getElementById('email')
     const password = document.getElementById('password')
     const name = document.getElementById('name')
 
     let isValid = true
 
-    // if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
-    //   setEmailError(true)
-    //   setEmailErrorMessage('Please enter a valid email address.')
-    //   isValid = false
-    // } else {
-    //   setEmailError(false)
-    //   setEmailErrorMessage('')
-    // }
     if (!name.value || name.value.length < 1) {
       setNameError(true)
       setNameErrorMessage('Please enter a valid username.')
@@ -213,13 +188,9 @@ export default function SignIn(props) {
                 color={passwordError ? 'error' : 'primary'}
               />
             </FormControl>
-            {/* <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
-              label="Remember me"
-            />
-            <ForgotPassword open={open} handleClose={handleClose} /> */}
+            {}
 
-            {/* show success message when signing in otherwise show the button */}
+            {}
 
             {successMessage ? (
               <Typography variant="body1" color="success.main">
@@ -230,34 +201,11 @@ export default function SignIn(props) {
                 Sign in
               </Button>
             )}
-            {/* <Link
-              component="button"
-              type="button"
-              onClick={handleClickOpen}
-              variant="body2"
-              sx={{ alignSelf: 'center' }}
-            >
-              Forgot your password?
-            </Link> */}
+            {}
           </Box>
           <Divider>or</Divider>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* <Button
-              fullWidth
-              variant="outlined"
-              onClick={() => alert('Sign in with Google')}
-              startIcon={<GoogleIcon />}
-            >
-              Sign in with Google
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={() => alert('Sign in with Facebook')}
-              startIcon={<FacebookIcon />}
-            >
-              Sign in with Facebook
-            </Button> */}
+            {}
             <Typography sx={{ textAlign: 'center' }}>
               Don&apos;t have an account?{' '}
               <Link

@@ -12,7 +12,9 @@ const AppLayout = () => {
   return (
     <NotebookDataProvider>
       <NotebookProvider>
-        <Box sx={{ display: 'grid', gridTemplateRows: 'auto 1fr', height: '100vh', width: '100vw' }}>
+        <Box
+          sx={{ display: 'grid', gridTemplateRows: 'auto 1fr', height: '100vh', width: '100vw' }}
+        >
           <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
           <Box
             sx={{

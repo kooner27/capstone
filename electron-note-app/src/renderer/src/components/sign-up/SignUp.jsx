@@ -7,9 +7,9 @@ import Divider from '@mui/material/Divider'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import FormLabel from '@mui/material/FormLabel'
 import FormControl from '@mui/material/FormControl'
-// modified
+
 import Link from '@mui/material/Link'
-// modified
+
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
@@ -18,7 +18,7 @@ import { styled } from '@mui/material/styles'
 import AppTheme from '../shared-theme/AppTheme'
 import ColorModeSelect from '../shared-theme/ColorModeSelect'
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons'
-// modified
+
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { registerUser } from '../../api/auth'
 
@@ -70,7 +70,7 @@ export default function SignUp(props) {
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('')
   const [nameError, setNameError] = React.useState(false)
   const [nameErrorMessage, setNameErrorMessage] = React.useState('')
-  const [successMessage, setSuccessMessage] = React.useState('') // for conditionally rendering success message
+  const [successMessage, setSuccessMessage] = React.useState('')
 
   const validateInputs = () => {
     const email = document.getElementById('email')
@@ -109,19 +109,6 @@ export default function SignUp(props) {
     return isValid
   }
 
-  // const handleSubmit = (event) => {
-  //   if (nameError || emailError || passwordError) {
-  //     event.preventDefault()
-  //     return
-  //   }
-  //   const data = new FormData(event.currentTarget)
-  //   console.log({
-  //     name: data.get('name'),
-  //     lastName: data.get('lastName'),
-  //     email: data.get('email'),
-  //     password: data.get('password')
-  //   })
-  // }
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (!validateInputs()) return
@@ -207,11 +194,8 @@ export default function SignUp(props) {
                 color={passwordError ? 'error' : 'primary'}
               />
             </FormControl>
-            {/* <FormControlLabel
-              control={<Checkbox value="allowExtraEmails" color="primary" />}
-              label="I want to receive updates via email."
-            /> */}
-            {/* show success message if signing in other wise show the sign up button */}
+            {}
+            {}
             {successMessage ? (
               <Typography variant="body1" color="success.main">
                 {successMessage}
@@ -226,22 +210,7 @@ export default function SignUp(props) {
             <Typography sx={{ color: 'text.secondary' }}>or</Typography>
           </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* <Button
-              fullWidth
-              variant="outlined"
-              onClick={() => alert('Sign up with Google')}
-              startIcon={<GoogleIcon />}
-            >
-              Sign up with Google
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={() => alert('Sign up with Facebook')}
-              startIcon={<FacebookIcon />}
-            >
-              Sign up with Facebook
-            </Button> */}
+            {}
             <Typography sx={{ textAlign: 'center' }}>
               Already have an account?{' '}
               <Link
