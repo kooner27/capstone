@@ -29,12 +29,10 @@ const Labels = () => {
   const [open, setOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Input fields
   const [notebookLabelInput, setNotebookLabelInput] = useState('')
   const [sectionLabelInput, setSectionLabelInput] = useState('')
   const [noteLabelInput, setNoteLabelInput] = useState('')
 
-  // Local editable copies of labels
   const [notebookLabels, setNotebookLabels] = useState([])
   const [sectionLabels, setSectionLabels] = useState([])
   const [noteLabels, setNoteLabels] = useState([])
@@ -50,13 +48,11 @@ const Labels = () => {
 
   const handleOpen = async () => {
     try {
-      // Refresh data before opening to ensure we have latest labels
       if (selectedNotebook) {
         const freshNotebooks = await fetchNotebooks()
         const freshNotebook = freshNotebooks.find((nb) => nb._id === selectedNotebook._id)
 
         if (freshNotebook) {
-          // Update selected notebook with fresh data
           setSelectedNotebook(freshNotebook)
           setNotebookLabels(freshNotebook.labels || [])
         } else {
@@ -92,7 +88,6 @@ const Labels = () => {
     } catch (error) {
       console.error('Error refreshing data before opening labels dialog:', error)
 
-      // Fallback to current data if refresh fails
       if (selectedNotebook) setNotebookLabels(selectedNotebook.labels || [])
       if (selectedSection) setSectionLabels(selectedSection.labels || [])
       if (selectedNote) setNoteLabels(selectedNote.labels || [])
@@ -115,12 +110,10 @@ const Labels = () => {
     try {
       setIsSaving(true)
 
-      // Update notebook labels
       if (selectedNotebook) {
         console.log('Saving notebook labels:', notebookLabels)
         await updateNotebookLabels(selectedNotebook._id, notebookLabels)
 
-        // Refresh notebooks data and update selected notebook reference
         const freshNotebooks = await fetchNotebooks()
         const freshNotebook = freshNotebooks.find((nb) => nb._id === selectedNotebook._id)
 
@@ -130,12 +123,10 @@ const Labels = () => {
         }
       }
 
-      // Update section labels
       if (selectedSection) {
         console.log('Saving section labels:', sectionLabels)
         await updateSectionLabels(selectedNotebook._id, selectedSection._id, sectionLabels)
 
-        // Refresh sections data and update selected section reference
         if (selectedNotebook) {
           const freshSections = await fetchSections(selectedNotebook._id)
           const freshSection = freshSections.find((s) => s._id === selectedSection._id)
@@ -147,7 +138,6 @@ const Labels = () => {
         }
       }
 
-      // Update note labels
       if (selectedNote) {
         console.log('Saving note labels:', noteLabels)
         await updateNoteLabels(
@@ -157,7 +147,6 @@ const Labels = () => {
           noteLabels
         )
 
-        // Refresh notes data and update selected note reference
         if (selectedNotebook && selectedSection) {
           const freshNotes = await fetchNotes(selectedNotebook._id, selectedSection._id)
           const freshNote = freshNotes.find((n) => n._id === selectedNote._id)
@@ -169,17 +158,14 @@ const Labels = () => {
         }
       }
 
-      // Close dialog after successful save
       handleClose()
     } catch (error) {
       console.error('Error saving labels:', error)
-      // You could add error handling UI here
     } finally {
       setIsSaving(false)
     }
   }
 
-  // Add label on Enter key
   const handleKeyPress = (e, type) => {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -203,7 +189,6 @@ const Labels = () => {
     }
   }
 
-  // Remove a label
   const handleDelete = (type, labelToDelete) => {
     switch (type) {
       case 'notebook':
@@ -220,9 +205,7 @@ const Labels = () => {
 
   return (
     <>
-      {/* <Button color="inherit" onClick={handleOpen} variant="outlined" sx={{ mr: 1 }}>
-        Labels
-      </Button> */}
+      {}
       <IconButton color="inherit" onClick={handleOpen} sx={{ mr: 1 }} title="Labels">
         <LocalOfferIcon />
       </IconButton>

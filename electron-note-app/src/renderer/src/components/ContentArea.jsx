@@ -2,10 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Box, Typography, Button, CircularProgress } from '@mui/material'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
-import CodeBlock from './CodeBlock' // Import the CodeBlock component
+import CodeBlock from './CodeBlock'
 const DEBUG = false
 
-// Helper function to safely access Electron shell API
 const openExternalLink = (url) => {
   if (window.electron && window.electron.shell) {
     window.electron.shell.openExternal(url)
@@ -22,35 +21,33 @@ const openExternalLink = (url) => {
   }
 }
 
-// Create a separate TextBlock component to properly handle hooks
 const TextBlock = ({ textBlock, index }) => {
-  const blockRef = useRef(null);
-  const formattedHtml = formatText(textBlock.content);
+  const blockRef = useRef(null)
+  const formattedHtml = formatText(textBlock.content)
 
-  // Add click handler for external links
   useEffect(() => {
     if (blockRef.current) {
-      const links = blockRef.current.querySelectorAll('a.external-link');
-      
+      const links = blockRef.current.querySelectorAll('a.external-link')
+
       const handleLinkClick = (e) => {
-        e.preventDefault();
-        const href = e.currentTarget.getAttribute('href');
+        e.preventDefault()
+        const href = e.currentTarget.getAttribute('href')
         if (href) {
-          openExternalLink(href);
+          openExternalLink(href)
         }
-      };
-      
-      links.forEach(link => {
-        link.addEventListener('click', handleLinkClick);
-      });
-      
+      }
+
+      links.forEach((link) => {
+        link.addEventListener('click', handleLinkClick)
+      })
+
       return () => {
-        links.forEach(link => {
-          link.removeEventListener('click', handleLinkClick);
-        });
-      };
+        links.forEach((link) => {
+          link.removeEventListener('click', handleLinkClick)
+        })
+      }
     }
-  }, [textBlock.content]);
+  }, [textBlock.content])
 
   const customStyles = `
     p { margin: 0 0 0.5em 0; }
@@ -73,16 +70,16 @@ const TextBlock = ({ textBlock, index }) => {
       font-weight: bold;
       font-size: 1.25em;
     }
-    /* Make sure strong elements in headings appear properly bold */
+    
     h1 strong, h2 strong, h3 strong { 
       font-weight: 900; 
       color: inherit;
     }
-    /* Ensure bold text is actually bold */
+    
     strong { 
       font-weight: bold !important; 
     }
-    /* Ensure italic text is actually italic */
+    
     em {
       font-style: italic !important;
     }
@@ -91,225 +88,196 @@ const TextBlock = ({ textBlock, index }) => {
     hr { margin: 1em 0; border: none; height: 1px; background-color: #ddd; }
     img { max-width: 100%; height: auto; }
     a.external-link { color: #0000EE; text-decoration: underline; cursor: pointer; }
-  `;
+  `
 
   return (
     <Box sx={{ my: 1 }}>
       <style>{customStyles}</style>
       <div ref={blockRef} dangerouslySetInnerHTML={{ __html: formattedHtml }} />
     </Box>
-  );
-};
+  )
+}
 
-// Define the formatText function outside so it can be used by the TextBlock component
 const formatText = (text) => {
-  // Process horizontal rules first
-  let formatted = text.replace(/^([-*=]{3,})$/gm, '<hr>');
+  let formatted = text.replace(/^([-*=]{3,})$/gm, '<hr>')
 
-  // Split by paragraphs
-  const paragraphs = formatted.split(/\n\n+/);
+  const paragraphs = formatted.split(/\n\n+/)
 
   return paragraphs
-    .map(paragraph => {
-      // Skip if this is just a horizontal rule
+    .map((paragraph) => {
       if (paragraph.trim() === '<hr>') {
-        return paragraph;
+        return paragraph
       }
 
-      // Check if this paragraph is a list
-      const isList = paragraph.split('\n').some(line => line.trim().match(/^- /));
+      const isList = paragraph.split('\n').some((line) => line.trim().match(/^- /))
 
       if (isList) {
         const listItems = paragraph
           .split('\n')
-          .map(line => {
-            const listMatch = line.trim().match(/^- (.*)/);
+          .map((line) => {
+            const listMatch = line.trim().match(/^- (.*)/)
             if (listMatch) {
-              // Process inline formatting within list items
-              const content = processInlineFormatting(listMatch[1]);
-              return `<li>${content}</li>`;
+              const content = processInlineFormatting(listMatch[1])
+              return `<li>${content}</li>`
             }
-            return line.trim() ? `<p>${processInlineFormatting(line)}</p>` : '';
+            return line.trim() ? `<p>${processInlineFormatting(line)}</p>` : ''
           })
-          .filter(item => item)
-          .join('');
+          .filter((item) => item)
+          .join('')
 
         if (listItems.includes('<li>')) {
-          return `<ul>${listItems}</ul>`;
+          return `<ul>${listItems}</ul>`
         }
-        return listItems;
+        return listItems
       }
 
-      // Process headings with inline formatting
-      let processed = paragraph;
+      let processed = paragraph
 
-      // Handle headers with inline formatting
-      const h1Match = processed.match(/^# (.+)$/m);
+      const h1Match = processed.match(/^# (.+)$/m)
       if (h1Match) {
-        const headingContent = h1Match[1];
-        const formattedContent = processInlineFormatting(headingContent);
-        return `<h1>${formattedContent}</h1>`;
+        const headingContent = h1Match[1]
+        const formattedContent = processInlineFormatting(headingContent)
+        return `<h1>${formattedContent}</h1>`
       }
 
-      const h2Match = processed.match(/^## (.+)$/m);
+      const h2Match = processed.match(/^## (.+)$/m)
       if (h2Match) {
-        const headingContent = h2Match[1];
-        const formattedContent = processInlineFormatting(headingContent);
-        return `<h2>${formattedContent}</h2>`;
+        const headingContent = h2Match[1]
+        const formattedContent = processInlineFormatting(headingContent)
+        return `<h2>${formattedContent}</h2>`
       }
 
-      const h3Match = processed.match(/^### (.+)$/m);
+      const h3Match = processed.match(/^### (.+)$/m)
       if (h3Match) {
-        const headingContent = h3Match[1];
-        const formattedContent = processInlineFormatting(headingContent);
-        return `<h3>${formattedContent}</h3>`;
+        const headingContent = h3Match[1]
+        const formattedContent = processInlineFormatting(headingContent)
+        return `<h3>${formattedContent}</h3>`
       }
 
-      // If it's not a header, process inline formatting and wrap in paragraph
-      // Replace newlines with <br> for non-list paragraphs
-      processed = processed.replace(/\n/g, '<br>');
-      
-      // Process all inline formatting
-      processed = processInlineFormatting(processed);
+      processed = processed.replace(/\n/g, '<br>')
 
-      // Wrap in paragraph if not already wrapped
-      if (
-        !processed.match(/^<(h[1-3]|ul|hr)>/) &&
-        !processed.trim().startsWith('<li>')
-      ) {
-        processed = `<p>${processed}</p>`;
+      processed = processInlineFormatting(processed)
+
+      if (!processed.match(/^<(h[1-3]|ul|hr)>/) && !processed.trim().startsWith('<li>')) {
+        processed = `<p>${processed}</p>`
       }
 
-      return processed;
+      return processed
     })
-    .join('');
-};
+    .join('')
+}
 
-// Move processInlineFormatting function outside components
 const processInlineFormatting = (text) => {
-  // Handle all inline formatting
-  let processed = text;
+  let processed = text
 
-  // Bold text - improved regex to handle bold correctly
-  processed = processed.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
-  
-  // Italic text - process after bold to avoid conflicts
-  processed = processed.replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
-  
-  // Images - process before links to avoid conflicts
-  processed = processed.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1">');
-  
-  // Links - add special class for external handling
-  processed = processed.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="external-link">$1</a>');
-  
-  return processed;
-};
+  processed = processed.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
 
-// MarkdownRenderer component with improved code block detection
+  processed = processed.replace(/\*([^*\n]+?)\*/g, '<em>$1</em>')
+
+  processed = processed.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1">')
+
+  processed = processed.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="external-link">$1</a>')
+
+  return processed
+}
+
 const MarkdownRenderer = ({ markdown }) => {
+  const { selectedNote } = useNotebook()
+  const noteId = selectedNote?._id || 'unknown'
+
   DEBUG &&
     console.log(
       '[DEBUG-MARKDOWN] Rendering markdown with content:',
       markdown ? (markdown.length > 50 ? markdown.substring(0, 50) + '...' : markdown) : 'empty'
-    );
+    )
 
   const parseMarkdown = (text) => {
-    if (!text) return [];
-    
-    // Step 1: Process and normalize the text
-    let normalizedText = text;
-    
-    // Fix for inline code blocks: Handle cases where code blocks are on a single line with text
-    // This specifically handles the pattern: Text ```language code code code```
-    const inlineCodeBlockRegex = /^(.*?)\s+```(\w*)\s+(.*?)\s+```\s*$/gm;
-    normalizedText = normalizedText.replace(inlineCodeBlockRegex, (match, prefix, lang, code) => {
-      return `${prefix}\n\`\`\`${lang}\n${code}\n\`\`\`\n`;
-    });
-    
-    // Step 2: Now we can safely parse the normalized text
-    const sections = [];
-    let currentText = '';
-    let inCodeBlock = false;
-    let codeLanguage = '';
-    let codeContent = '';
+    if (!text) return []
 
-    const lines = normalizedText.split('\n');
+    let normalizedText = text
+
+    const inlineCodeBlockRegex = /^(.*?)\s+```(\w*)\s+(.*?)\s+```\s*$/gm
+    normalizedText = normalizedText.replace(inlineCodeBlockRegex, (match, prefix, lang, code) => {
+      return `${prefix}\n\`\`\`${lang}\n${code}\n\`\`\`\n`
+    })
+
+    const sections = []
+    let currentText = ''
+    let inCodeBlock = false
+    let codeLanguage = ''
+    let codeContent = ''
+
+    const lines = normalizedText.split('\n')
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      // Check for code blocks even with indentation
-      const trimmedLine = line.trim();
+      const line = lines[i]
+
+      const trimmedLine = line.trim()
 
       if (trimmedLine.startsWith('```')) {
         if (!inCodeBlock) {
           if (currentText) {
-            sections.push({ type: 'text', content: currentText });
-            currentText = '';
+            sections.push({ type: 'text', content: currentText })
+            currentText = ''
           }
 
-          codeLanguage = trimmedLine.slice(3).trim();
-          codeContent = '';
-          inCodeBlock = true;
+          codeLanguage = trimmedLine.slice(3).trim()
+          codeContent = ''
+          inCodeBlock = true
         } else {
-          // End of code block - create a code section
           sections.push({
             type: 'code',
             language: codeLanguage,
             content: codeContent
-          });
-          codeLanguage = '';
-          codeContent = '';
-          inCodeBlock = false;
+          })
+          codeLanguage = ''
+          codeContent = ''
+          inCodeBlock = false
         }
       } else if (inCodeBlock) {
-        // Inside a code block - accumulate code content
-        codeContent += (codeContent ? '\n' : '') + line;
+        codeContent += (codeContent ? '\n' : '') + line
       } else {
-        // Outside a code block - accumulate text content
-        currentText += (currentText ? '\n' : '') + line;
+        currentText += (currentText ? '\n' : '') + line
       }
     }
 
-    // Handle any remaining text
     if (currentText) {
-      sections.push({ type: 'text', content: currentText });
+      sections.push({ type: 'text', content: currentText })
     }
 
-    // Handle unclosed code blocks
     if (inCodeBlock && codeContent) {
-      sections.push({ type: 'text', content: '```' + codeLanguage + '\n' + codeContent });
+      sections.push({ type: 'text', content: '```' + codeLanguage + '\n' + codeContent })
     }
 
-    return sections;
-  };
+    return sections
+  }
 
-  const sections = parseMarkdown(markdown || '');
+  const sections = parseMarkdown(markdown || '')
 
   return (
     <Box>
       {sections.map((section, index) => {
         if (section.type === 'code') {
           return (
-            <CodeBlock 
-              key={`code-${index}`}
+            <CodeBlock
+              key={`code-${noteId}-${index}`}
               code={section.content}
               language={section.language}
               index={index}
+              noteId={noteId}
             />
-          );
+          )
         } else {
-          // Use the TextBlock component instead of calling a function
-          return <TextBlock key={`text-${index}`} textBlock={section} index={index} />;
+          return <TextBlock key={`text-${noteId}-${index}`} textBlock={section} index={index} />
         }
       })}
     </Box>
-  );
-};
+  )
+}
 
 const ContentArea = () => {
   DEBUG && console.log('[DEBUG] ContentArea component rendering')
 
-  // Get selection and edit state from NotebookContext
   const {
     selectedNotebook,
     selectedSection,
@@ -323,7 +291,6 @@ const ContentArea = () => {
     setIsPreviewMode
   } = useNotebook()
 
-  // Log what we have when rendering
   DEBUG &&
     console.log('[DEBUG] ContentArea current state:', {
       hasSelectedNote: !!selectedNote,
@@ -334,13 +301,11 @@ const ContentArea = () => {
       contentLength: selectedNote?.content?.length || 0
     })
 
-  // Get loading, error, and data operations from NotebookDataContext
   const { isLoading, error, updateNote } = useNotebookData()
 
   const editableRef = useRef(null)
-  const contentBuffer = useRef('') // Buffer to store content without re-rendering
+  const contentBuffer = useRef('')
 
-  // Handle edit cancellation - FIXED VERSION
   useEffect(() => {
     DEBUG && console.log('[DEBUG] editCanceled effect running, editCanceled =', editCanceled)
     DEBUG &&
@@ -358,7 +323,6 @@ const ContentArea = () => {
       DEBUG && console.log('[DEBUG] Current isEditMode:', isEditMode)
       DEBUG && console.log('[DEBUG] Current editableRef exists:', !!editableRef.current)
 
-      // Reset the editor if we're still in edit mode
       if (editableRef.current && isEditMode) {
         DEBUG && console.log('[DEBUG] Resetting editable content to editStartContent')
         editableRef.current.innerText = editStartContent
@@ -366,7 +330,6 @@ const ContentArea = () => {
         DEBUG && console.log('[DEBUG] Not in edit mode, no need to reset editor')
       }
 
-      // Clear the content buffer to avoid affecting content when switching modes
       DEBUG && console.log('[DEBUG] Clearing contentBuffer')
       contentBuffer.current = ''
 
@@ -377,16 +340,13 @@ const ContentArea = () => {
     }
   }, [editCanceled, editStartContent, isEditMode, setEditCanceled])
 
-  // Handle Enter key for line breaks
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      // Store information about indentation before the default Enter action
       const content = editableRef.current?.innerText || ''
       const cursorPos = getCursorPosition(editableRef.current)
       const lines = content.substring(0, cursorPos).split('\n')
       let indentation = ''
 
-      // Check if previous line had indentation
       if (lines.length > 0) {
         const prevLine = lines[lines.length - 1]
         const indentMatch = prevLine.match(/^(\s+)/)
@@ -395,15 +355,12 @@ const ContentArea = () => {
         }
       }
 
-      // If there's indentation to preserve, handle it manually
       if (indentation) {
-        e.preventDefault() // Only prevent default if we need to handle indentation
+        e.preventDefault()
 
-        // Insert a real newline character followed by the indentation
         document.execCommand('insertText', false, '\n' + indentation)
       }
 
-      // Update the buffer with new content
       setTimeout(() => {
         if (editableRef.current) {
           contentBuffer.current = editableRef.current.innerText || ''
@@ -412,7 +369,6 @@ const ContentArea = () => {
     }
   }
 
-  // Helper function to get cursor position
   const getCursorPosition = (element) => {
     let position = 0
     if (!element) return position
@@ -427,7 +383,6 @@ const ContentArea = () => {
     return position
   }
 
-  // Update content when user types
   const handleInput = () => {
     if (editableRef.current) {
       const content = editableRef.current.innerText || ''
@@ -437,12 +392,10 @@ const ContentArea = () => {
           content.length > 50 ? content.substring(0, 50) + '...' : content
         )
 
-      // Store content in a ref instead of updating state immediately
       contentBuffer.current = content
     }
   }
 
-  // Update state only when focus is lost
   const handleBlur = () => {
     if (contentBuffer.current) {
       DEBUG &&
@@ -456,7 +409,6 @@ const ContentArea = () => {
     }
   }
 
-  // Make sure content is saved when exiting edit mode
   useEffect(() => {
     DEBUG &&
       console.log(
@@ -474,7 +426,6 @@ const ContentArea = () => {
     }
   }, [isEditMode, updatePageContent])
 
-  // Handle preview mode change
   useEffect(() => {
     DEBUG &&
       console.log(
@@ -486,7 +437,7 @@ const ContentArea = () => {
 
     if (isEditMode && !isPreviewMode) {
       DEBUG && console.log('[DEBUG] Going from preview back to edit mode')
-      // When going from preview back to edit mode, restore content in editor
+
       setTimeout(() => {
         if (editableRef.current) {
           const content = contentBuffer.current || selectedNote?.content || ''
@@ -503,7 +454,6 @@ const ContentArea = () => {
     }
   }, [isPreviewMode, isEditMode, selectedNote])
 
-  // Initialization when switching to edit mode
   useEffect(() => {
     DEBUG &&
       console.log(
@@ -521,11 +471,9 @@ const ContentArea = () => {
           content.length > 50 ? content.substring(0, 50) + '...' : content
         )
 
-      // Set the content correctly when entering edit mode
       editableRef.current.innerText = content
       contentBuffer.current = content
 
-      // Focus and position cursor at end
       setTimeout(() => {
         if (editableRef.current) {
           DEBUG && console.log('[DEBUG] Focusing editor and setting cursor position')
@@ -535,7 +483,7 @@ const ContentArea = () => {
           const selection = window.getSelection()
 
           range.selectNodeContents(editableRef.current)
-          range.collapse(false) // collapse to end
+          range.collapse(false)
 
           selection.removeAllRanges()
           selection.addRange(range)
@@ -546,8 +494,6 @@ const ContentArea = () => {
     }
   }, [isEditMode, selectedNote])
 
-
-  // Loading state
   if (isLoading && !selectedNote) {
     DEBUG && console.log('[DEBUG] Rendering loading state')
     return (
@@ -565,7 +511,6 @@ const ContentArea = () => {
     )
   }
 
-  // Error state
   if (error) {
     DEBUG && console.log('[DEBUG] Rendering error state:', error)
     return (
@@ -578,7 +523,6 @@ const ContentArea = () => {
     )
   }
 
-  // Welcome message when no note is selected
   if (!selectedNote) {
     DEBUG && console.log('[DEBUG] Rendering welcome message (no note selected)')
     return (
@@ -595,7 +539,6 @@ const ContentArea = () => {
     )
   }
 
-  // Log what we're about to render
   DEBUG &&
     console.log(
       '[DEBUG] Rendering main content with mode:',
@@ -611,7 +554,6 @@ const ContentArea = () => {
         : 'empty'
     )
 
-  // Main content area with note content
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4">{selectedNote.title}</Typography>
@@ -620,19 +562,17 @@ const ContentArea = () => {
         sx={{
           height: '850px',
           overflowY: 'auto',
-          pl: 0, // Remove left padding to align with title
-          pr: 0, // Remove right padding
-          py: 1, // Keep top and bottom padding
+          pl: 0,
+          pr: 0,
+          py: 1,
           mt: 2,
           backgroundColor: 'transparent'
         }}
       >
         {isEditMode ? (
           isPreviewMode ? (
-            // Preview mode within edit mode - shows rendered markdown of current edits
             <MarkdownRenderer markdown={contentBuffer.current || selectedNote.content || ''} />
           ) : (
-            // Regular edit mode - shows editable text
             <pre
               ref={editableRef}
               contentEditable
@@ -653,7 +593,6 @@ const ContentArea = () => {
             />
           )
         ) : (
-          // Regular view mode (not editing)
           <MarkdownRenderer markdown={selectedNote.content || ''} />
         )}
       </Box>
