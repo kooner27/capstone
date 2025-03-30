@@ -8,6 +8,7 @@ import {
   createNote as apiCreateNote,
   updateNote as apiUpdateNote
 } from '../api/notebook'
+import { deleteNotebook, deleteSection, deleteNote } from '../api/delete'
 
 const NotebookDataContext = createContext()
 
@@ -160,6 +161,69 @@ export const NotebookDataProvider = ({ children }) => {
     }
   }
 
+  // Delete Functionality
+  const deleteNotebookItem = async (notebookId) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      await deleteNotebook(notebookId)
+
+      // Update local state by filtering out the deleted notebook
+      setNotebooks((prevNotebooks) => prevNotebooks.filter((nb) => nb._id !== notebookId))
+
+      return true
+    } catch (err) {
+      console.error('Error deleting notebook:', err)
+      setError(err.message)
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Delete section function
+  const deleteSectionItem = async (notebookId, sectionId) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      await deleteSection(notebookId, sectionId)
+
+      // Update local state by filtering out the deleted section
+      setSections((prevSections) => prevSections.filter((s) => s._id !== sectionId))
+
+      return true
+    } catch (err) {
+      console.error('Error deleting section:', err)
+      setError(err.message)
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Delete note function
+  const deleteNoteItem = async (notebookId, sectionId, noteId) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      await deleteNote(notebookId, sectionId, noteId)
+
+      // Update local state by filtering out the deleted note
+      setNotes((prevNotes) => prevNotes.filter((n) => n._id !== noteId))
+
+      return true
+    } catch (err) {
+      console.error('Error deleting note:', err)
+      setError(err.message)
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const value = {
     notebooks,
     sections,
@@ -173,7 +237,10 @@ export const NotebookDataProvider = ({ children }) => {
     createNotebook,
     createSection,
     createNote,
-    updateNote
+    updateNote,
+    deleteNoteItem,
+    deleteSectionItem,
+    deleteNotebookItem
   }
 
   return <NotebookDataContext.Provider value={value}>{children}</NotebookDataContext.Provider>

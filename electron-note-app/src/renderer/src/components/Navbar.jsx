@@ -19,6 +19,7 @@ import SearchBar from './SearchBar'
 import ImportExport from './import-export/ImportExport'
 import RequirementsManager from './RequirementsManager'
 import Labels from './Labels'
+import DeleteDialog from './DeleteDialog'
 
 const Navbar = ({ toggleSidebar }) => {
   const DEBUG = false
@@ -270,6 +271,7 @@ const Navbar = ({ toggleSidebar }) => {
           </Box>
           {}
           <Box sx={{ flexGrow: 1 }} />
+          <DeleteDialog />
           <Labels />
 
           <RequirementsManager />
