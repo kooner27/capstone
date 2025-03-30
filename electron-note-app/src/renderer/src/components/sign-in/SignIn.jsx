@@ -133,12 +133,12 @@ export default function SignIn(props) {
   }
 
   return (
-    <AppTheme {...props}>
+    <AppTheme {...props} mode="dark">
       <CssBaseline enableColorScheme />
       <SignInContainer direction="column" justifyContent="space-between">
-        <ColorModeSelect sx={{ position: 'fixed', top: '1rem', right: '1rem' }} />
+        {/* <ColorModeSelect sx={{ position: 'fixed', top: '1rem', right: '1rem' }} /> */}
         <Card variant="outlined">
-          <SitemarkIcon />
+          {/* <SitemarkIcon /> This came with template, we don't need it. We can have our own logo later maybe */}
           <Typography
             component="h1"
             variant="h4"
