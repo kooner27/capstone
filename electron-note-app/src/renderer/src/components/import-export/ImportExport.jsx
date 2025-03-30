@@ -20,14 +20,19 @@ import {
   Backdrop,
   Menu,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  LinearProgress
 } from '@mui/material'
 import ImportExportIcon from '@mui/icons-material/ImportExport'
 import DownloadIcon from '@mui/icons-material/Download'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
+import FolderZipIcon from '@mui/icons-material/FolderZip'
+import UploadFileIcon from '@mui/icons-material/UploadFile'
 import { useNotebook } from '../NotebookContext'
+import { useNotebookData } from '../NotebookDataContext'
 import html2pdf from 'html2pdf.js'
 import { marked } from 'marked'
+import { updateNotebookLabels, updateSectionLabels, updateNoteLabels } from '../../api/labels'
 
 const createOffscreenContainer = () => {
   const existingContainer = document.getElementById('pdf-export-container')
@@ -49,6 +54,7 @@ const ImportExport = () => {
   const {
     notebooks,
     sections,
+    notes,
     refreshNotebooks,
     refreshSections,
     createNotebook,
@@ -58,6 +64,8 @@ const ImportExport = () => {
     selectedNotebook,
     selectedSection
   } = useNotebook()
+
+  const { fetchNotes } = useNotebookData()
 
   const [isLoading, setIsLoading] = useState(false)
   const [notification, setNotification] = useState({
@@ -76,6 +84,14 @@ const ImportExport = () => {
   const [createNewSection, setCreateNewSection] = useState(false)
   const [menuAnchorEl, setMenuAnchorEl] = useState(null)
   const menuOpen = Boolean(menuAnchorEl)
+
+  const [exportProgress, setExportProgress] = useState(0)
+  const [importProgress, setImportProgress] = useState(0)
+  const [showExportProgress, setShowExportProgress] = useState(false)
+  const [showImportProgress, setShowImportProgress] = useState(false)
+  const [openImportZipDialog, setOpenImportZipDialog] = useState(false)
+  const [importZipValidationStatus, setImportZipValidationStatus] = useState(null)
+  const [zipSummary, setZipSummary] = useState(null)
 
   useEffect(() => {
     return () => {
@@ -100,6 +116,225 @@ const ImportExport = () => {
       handleFileSelect()
     } else if (action === 'export') {
       handleExportToPdf()
+    } else if (action === 'exportZip') {
+      handleExportToZip()
+    } else if (action === 'importZip') {
+      handleImportFromZip()
+    }
+  }
+
+  const handleExportToZip = async () => {
+    try {
+      setIsLoading(true)
+      setShowExportProgress(true)
+      setExportProgress(0)
+
+      if (notebooks.length === 0) {
+        await refreshNotebooks()
+      }
+
+      setExportProgress(10)
+
+      const allData = {
+        notebooks: [],
+        timestamp: new Date().toISOString(),
+        appVersion: window.electron?.app?.version || 'unknown'
+      }
+
+      for (let i = 0; i < notebooks.length; i++) {
+        const notebook = notebooks[i]
+        const notebookData = { ...notebook, sections: [] }
+
+        const sectionsData = await refreshSections(notebook._id)
+        setExportProgress(10 + Math.floor((i / notebooks.length) * 40))
+
+        for (let j = 0; j < sectionsData.length; j++) {
+          const section = sectionsData[j]
+          const sectionData = { ...section, notes: [] }
+
+          const notesData = await fetchNotes(notebook._id, section._id)
+          setExportProgress(50 + Math.floor((i / notebooks.length) * 40))
+
+          sectionData.notes = notesData.map((note) => ({
+            _id: note._id,
+            title: note.title,
+            content: note.content,
+            createdAt: note.createdAt,
+            updatedAt: note.updatedAt,
+            labels: note.labels || []
+          }))
+
+          notebookData.sections.push(sectionData)
+        }
+
+        allData.notebooks.push(notebookData)
+      }
+
+      setExportProgress(90)
+
+      const result = await window.electron.exportToZip(allData)
+
+      setExportProgress(100)
+      setShowExportProgress(false)
+
+      if (result.success) {
+        setNotification({
+          open: true,
+          message: `Backup saved successfully to ${result.filePath}`,
+          severity: 'success'
+        })
+      } else {
+        throw new Error(result.error || 'Failed to create backup')
+      }
+    } catch (error) {
+      console.error('Error exporting to ZIP:', error)
+      setNotification({
+        open: true,
+        message: `Error creating backup: ${error.message}`,
+        severity: 'error'
+      })
+      setShowExportProgress(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleImportFromZip = async () => {
+    try {
+      setIsLoading(true)
+
+      const result = await window.electron.selectBackupFile()
+
+      if (result.canceled) {
+        setIsLoading(false)
+        return
+      }
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to select backup file')
+      }
+
+      setShowImportProgress(true)
+      setImportProgress(10)
+
+      const validationResult = await window.electron.validateBackupZip(result.filePath)
+
+      if (!validationResult.valid) {
+        setImportZipValidationStatus({
+          valid: false,
+          error: validationResult.error
+        })
+        setShowImportProgress(false)
+        throw new Error(`Invalid backup file: ${validationResult.error}`)
+      }
+
+      setImportProgress(30)
+
+      const summary = validationResult.summary
+      setZipSummary(summary)
+
+      setOpenImportZipDialog(true)
+      setShowImportProgress(false)
+      setIsLoading(false)
+    } catch (error) {
+      console.error('Error importing from ZIP:', error)
+      setNotification({
+        open: true,
+        message: `Error importing backup: ${error.message}`,
+        severity: 'error'
+      })
+      setIsLoading(false)
+      setShowImportProgress(false)
+    }
+  }
+
+  const handleConfirmImport = async () => {
+    try {
+      setIsLoading(true)
+      setShowImportProgress(true)
+      setImportProgress(40)
+
+      const importResult = await window.electron.importFromBackupZip()
+
+      if (!importResult.success) {
+        throw new Error(importResult.error || 'Failed to import backup')
+      }
+
+      await refreshNotebooks()
+
+      const existingNotebookNames = new Map()
+      notebooks.forEach((notebook) => {
+        existingNotebookNames.set(notebook.name.toLowerCase(), true)
+      })
+
+      for (let i = 0; i < importResult.data.notebooks.length; i++) {
+        const notebookData = importResult.data.notebooks[i]
+
+        let newNotebookName = notebookData.name
+        let counter = 1
+
+        let lowerCaseName = newNotebookName.toLowerCase()
+        while (existingNotebookNames.has(lowerCaseName)) {
+          newNotebookName = `${notebookData.name} (${counter})`
+          lowerCaseName = newNotebookName.toLowerCase()
+          counter++
+        }
+
+        existingNotebookNames.set(lowerCaseName, true)
+
+        const newNotebook = await createNotebook(newNotebookName)
+
+        if (notebookData.labels && notebookData.labels.length > 0) {
+          await updateNotebookLabels(newNotebook._id, notebookData.labels)
+        }
+
+        setImportProgress(40 + Math.floor((i / importResult.data.notebooks.length) * 30))
+
+        for (let j = 0; j < notebookData.sections.length; j++) {
+          const sectionData = notebookData.sections[j]
+
+          const newSection = await createSection(newNotebook._id, sectionData.title)
+
+          if (sectionData.labels && sectionData.labels.length > 0) {
+            await updateSectionLabels(newNotebook._id, newSection._id, sectionData.labels)
+          }
+
+          for (let k = 0; k < sectionData.notes.length; k++) {
+            const noteData = sectionData.notes[k]
+
+            await createNote(
+              newNotebook._id,
+              newSection._id,
+              noteData.title,
+              noteData.content,
+              noteData.labels
+            )
+          }
+        }
+      }
+
+      setImportProgress(100)
+
+      await refreshNotebooks()
+
+      setNotification({
+        open: true,
+        message: 'Backup restored successfully with all labels!',
+        severity: 'success'
+      })
+
+      setOpenImportZipDialog(false)
+      setShowImportProgress(false)
+    } catch (error) {
+      console.error('Error completing import:', error)
+      setNotification({
+        open: true,
+        message: `Error restoring backup: ${error.message}`,
+        severity: 'error'
+      })
+      setShowImportProgress(false)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -415,11 +650,11 @@ const ImportExport = () => {
       })
       const enhancePageBreaks = () => {
         const headings = contentDiv.querySelectorAll('h1, h2')
-        headings.forEach(heading => {
+        headings.forEach((heading) => {
           heading.classList.add('page-break-before')
         })
         const largeElements = contentDiv.querySelectorAll('pre, table')
-        largeElements.forEach(element => {
+        largeElements.forEach((element) => {
           if (element.offsetHeight > 500) {
             element.classList.add('page-break-before')
           }
@@ -439,25 +674,25 @@ const ImportExport = () => {
       document.head.appendChild(breakStyle)
       setTimeout(() => enhancePageBreaks(), 10)
       const fileName = `${selectedNote.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`
-      await new Promise(resolve => setTimeout(resolve, 50))
+      await new Promise((resolve) => setTimeout(resolve, 50))
       await html2pdf()
         .from(container)
         .set({
           margin: [0.75, 0.75, 0.75, 0.75],
           filename: fileName,
-          html2canvas: { 
+          html2canvas: {
             scale: 2,
             useCORS: true,
             logging: false,
             windowWidth: 800
           },
-          jsPDF: { 
+          jsPDF: {
             unit: 'in',
-            format: 'letter', 
+            format: 'letter',
             orientation: 'portrait',
             compress: true
           },
-          pagebreak: { 
+          pagebreak: {
             mode: ['avoid-all', 'css', 'legacy'],
             before: '.page-break-before',
             after: '.page-break-after'
@@ -491,9 +726,9 @@ const ImportExport = () => {
   return (
     <>
       <Tooltip title="Import/Export">
-        <IconButton 
-          color="inherit" 
-          onClick={handleButtonClick} 
+        <IconButton
+          color="inherit"
+          onClick={handleButtonClick}
           sx={{ color: 'white' }}
           aria-controls={menuOpen ? 'import-export-menu' : undefined}
           aria-haspopup="true"
@@ -509,11 +744,11 @@ const ImportExport = () => {
         open={menuOpen}
         onClose={handleMenuClose}
         MenuListProps={{
-          'aria-labelledby': 'import-export-button',
+          'aria-labelledby': 'import-export-button'
         }}
         PaperProps={{
           elevation: 3,
-          sx: { 
+          sx: {
             minWidth: 200,
             mt: 0.5
           }
@@ -530,6 +765,18 @@ const ImportExport = () => {
             <DownloadIcon fontSize="medium" color="primary" />
           </ListItemIcon>
           <ListItemText primary="Export as PDF" />
+        </MenuItem>
+        <MenuItem onClick={() => handleActionSelect('exportZip')} sx={{ py: 1.5 }}>
+          <ListItemIcon>
+            <FolderZipIcon fontSize="medium" color="primary" />
+          </ListItemIcon>
+          <ListItemText primary="Export to ZIP (Backup)" />
+        </MenuItem>
+        <MenuItem onClick={() => handleActionSelect('importZip')} sx={{ py: 1.5 }}>
+          <ListItemIcon>
+            <UploadFileIcon fontSize="medium" color="primary" />
+          </ListItemIcon>
+          <ListItemText primary="Import from ZIP (Restore)" />
         </MenuItem>
       </Menu>
 
@@ -655,15 +902,115 @@ const ImportExport = () => {
         </DialogActions>
       </Dialog>
 
+      {}
+      <Dialog
+        open={openImportZipDialog}
+        onClose={() => setOpenImportZipDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Restore from Backup</DialogTitle>
+        <DialogContent>
+          {zipSummary ? (
+            <Box>
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                This will import all notebooks, sections, and notes from the backup. Existing items
+                with the same names will not be overwritten - duplicates will be created.
+              </Alert>
+
+              <Typography variant="h6" gutterBottom>
+                Backup Summary:
+              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body1">
+                  <strong>Created on:</strong> {new Date(zipSummary.timestamp).toLocaleString()}
+                </Typography>
+                <Typography variant="body1">
+                  <strong>App Version:</strong> {zipSummary.appVersion}
+                </Typography>
+              </Box>
+
+              <Typography variant="subtitle1" gutterBottom>
+                Content to be imported:
+              </Typography>
+              <Box sx={{ pl: 2, mb: 3 }}>
+                <Typography>
+                  <strong>{zipSummary.notebookCount}</strong> notebooks
+                </Typography>
+                <Typography>
+                  <strong>{zipSummary.sectionCount}</strong> sections
+                </Typography>
+                <Typography>
+                  <strong>{zipSummary.noteCount}</strong> notes
+                </Typography>
+              </Box>
+
+              <Typography variant="subtitle1" gutterBottom>
+                Notebooks:
+              </Typography>
+              <Box sx={{ pl: 2, mb: 2, maxHeight: 200, overflow: 'auto' }}>
+                {zipSummary.notebooks.map((notebook, index) => (
+                  <Box key={index} sx={{ mb: 1 }}>
+                    <Typography>
+                      <strong>{notebook.name}</strong> ({notebook.sectionCount} sections,{' '}
+                      {notebook.noteCount} notes)
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <CircularProgress />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setOpenImportZipDialog(false)}
+            color="inherit"
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmImport}
+            variant="contained"
+            color="primary"
+            disabled={isLoading || !zipSummary}
+          >
+            {isLoading ? <CircularProgress size={24} /> : 'Restore Backup'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Backdrop
         sx={{
           color: '#fff',
           zIndex: (theme) => theme.zIndex.drawer + 1,
           backgroundColor: 'rgba(0, 0, 0, 0.5)'
         }}
-        open={isLoading && !openLocationDialog}
+        open={isLoading && !openLocationDialog && !openImportZipDialog}
       >
-        <CircularProgress color="inherit" />
+        {showExportProgress || showImportProgress ? (
+          <Box sx={{ width: 400, bgcolor: 'background.paper', p: 3, borderRadius: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              {showExportProgress ? 'Creating Backup...' : 'Restoring Backup...'}
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              value={showExportProgress ? exportProgress : importProgress}
+              sx={{ height: 10, borderRadius: 5, mb: 2 }}
+            />
+            <Typography variant="body2" color="text.secondary">
+              {showExportProgress
+                ? `Exporting notebooks and notes (${exportProgress}%)`
+                : `Importing notebooks and notes (${importProgress}%)`}
+            </Typography>
+          </Box>
+        ) : (
+          <CircularProgress color="inherit" />
+        )}
       </Backdrop>
 
       <Snackbar
@@ -672,7 +1019,11 @@ const ImportExport = () => {
         onClose={handleNotificationClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleNotificationClose} severity={notification.severity} sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleNotificationClose}
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
           {notification.message}
         </Alert>
       </Snackbar>

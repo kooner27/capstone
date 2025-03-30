@@ -67,6 +67,21 @@ export const NotebookProvider = ({ children }) => {
     if (selectedNote) {
       DEBUG && console.log('[DEBUG] Note selected/changed:', selectedNote._id)
 
+      if (isEditMode && editingNoteRef.current && editingNoteRef.current !== selectedNote._id) {
+        DEBUG &&
+          console.log('[DEBUG] Different note selected while in edit mode - exiting edit mode')
+
+        if (isDirty) {
+          DEBUG && console.log('[DEBUG] Changes detected, saving content before switching notes')
+          saveContent()
+        }
+
+        DEBUG && console.log('[DEBUG] Exiting edit mode due to note selection change')
+        setIsEditMode(false)
+        setIsPreviewMode(false)
+        setIsDirty(false)
+      }
+
       if (!isEditMode || editingNoteRef.current !== selectedNote._id) {
         DEBUG && console.log('[DEBUG] Setting original content to:', selectedNote.content || '')
         setOriginalNoteContent(selectedNote.content || '')
@@ -76,7 +91,7 @@ export const NotebookProvider = ({ children }) => {
 
       editingNoteRef.current = selectedNote._id
     }
-  }, [selectedNote, isEditMode])
+  }, [selectedNote])
 
   const toggleEditMode = () => {
     if (!isEditMode) {
