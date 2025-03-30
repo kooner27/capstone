@@ -252,28 +252,52 @@ const ImportExport = () => {
       setIsLoading(true)
       setShowImportProgress(true)
       setImportProgress(40)
-
+  
       const importResult = await window.electron.importFromBackupZip()
-
+  
       if (!importResult.success) {
         throw new Error(importResult.error || 'Failed to import backup')
       }
-
+  
+      // Refresh notebooks to get the current state
+      await refreshNotebooks()
+      
+      // Create a map of existing notebook names for quick lookup
+      const existingNotebookNames = new Map()
+      notebooks.forEach(notebook => {
+        existingNotebookNames.set(notebook.name.toLowerCase(), true)
+      })
+  
       for (let i = 0; i < importResult.data.notebooks.length; i++) {
         const notebookData = importResult.data.notebooks[i]
-
-        const newNotebook = await createNotebook(notebookData.name)
-
+        
+        // Handle duplicate notebook names
+        let newNotebookName = notebookData.name
+        let counter = 1
+        
+        // Check if this name already exists (case insensitive)
+        let lowerCaseName = newNotebookName.toLowerCase()
+        while (existingNotebookNames.has(lowerCaseName)) {
+          newNotebookName = `${notebookData.name} (${counter})`
+          lowerCaseName = newNotebookName.toLowerCase()
+          counter++
+        }
+        
+        // Add the name to our tracking map
+        existingNotebookNames.set(lowerCaseName, true)
+  
+        const newNotebook = await createNotebook(newNotebookName)
+  
         setImportProgress(40 + Math.floor((i / importResult.data.notebooks.length) * 30))
-
+  
         for (let j = 0; j < notebookData.sections.length; j++) {
           const sectionData = notebookData.sections[j]
-
+  
           const newSection = await createSection(newNotebook._id, sectionData.title)
-
+  
           for (let k = 0; k < sectionData.notes.length; k++) {
             const noteData = sectionData.notes[k]
-
+  
             await createNote(
               newNotebook._id,
               newSection._id,
@@ -284,17 +308,17 @@ const ImportExport = () => {
           }
         }
       }
-
+  
       setImportProgress(100)
-
+  
       await refreshNotebooks()
-
+  
       setNotification({
         open: true,
         message: 'Backup restored successfully!',
         severity: 'success'
       })
-
+  
       setOpenImportZipDialog(false)
       setShowImportProgress(false)
     } catch (error) {
