@@ -1,3 +1,10 @@
+/*
+This code block is necessary for implementing the requirements in 4.1: User Registration of our SRS,
+namely: FR1, FR2, FR3
+
+We built upon an MUI template for this component obtained from:
+https://mui.com/material-ui/getting-started/templates/?srsltid=AfmBOopQEbZNGsTIkOVctnk6rDNEYfeRhrAhQrR4P57Wm1T655QJ7HnL
+*/
 import * as React from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -127,6 +134,21 @@ export default function SignUp(props) {
       }, 1000)
     } catch (error) {
       alert(`Error: ${error.message}`)
+      console.error('Registration error:', error)
+
+      // Show error in all fields
+      setNameError(true)
+      setEmailError(true)
+      setPasswordError(true)
+      setNameErrorMessage('Registration failed')
+      setEmailErrorMessage('Server error: ' + error.message)
+      setPasswordErrorMessage('Registration failed')
+
+      // Refocus on the username field
+      const nameField = document.getElementById('name')
+      if (nameField) {
+        setTimeout(() => nameField.focus(), 100)
+      }
     }
   }
 

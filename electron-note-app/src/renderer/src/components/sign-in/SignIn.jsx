@@ -1,3 +1,10 @@
+/*
+This code block is necessary for implementing the requirements in 4.2: User Login of our SRS,
+namely: FR4, FR5.
+
+We built upon an MUI template for this component obtained from:
+https://mui.com/material-ui/getting-started/templates/?srsltid=AfmBOopQEbZNGsTIkOVctnk6rDNEYfeRhrAhQrR4P57Wm1T655QJ7HnL
+*/
 import * as React from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -101,7 +108,21 @@ export default function SignIn(props) {
         navigate('/applayout')
       }, 1000)
     } catch (error) {
-      alert(`Error: ${error.message}`)
+      // Do not use alert and instead just use our errors given in the template
+      // Alert was causing issues with selecting stuff
+      console.error('Login error:', error)
+
+      // Show error in both fields
+      setNameError(true)
+      setPasswordError(true)
+      setNameErrorMessage('Invalid credentials')
+      setPasswordErrorMessage('Invalid credentials')
+
+      // Re focus the username
+      const nameField = document.getElementById('name')
+      if (nameField) {
+        setTimeout(() => nameField.focus(), 100)
+      }
     }
   }
 

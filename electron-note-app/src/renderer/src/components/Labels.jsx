@@ -1,3 +1,11 @@
+/*
+This component is for 4.7 Labels for Organization in our SRS.
+The code is required for FR22, FR23, FR25
+It allows users to manage labels such as viewing, creating, and deleting them
+for notebooks, sections and notes.
+
+For FR24 which is search and filtering please see the SearchBar component
+*/
 import { useState } from 'react'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
@@ -16,6 +24,9 @@ import {
 import { updateNotebookLabels, updateSectionLabels, updateNoteLabels } from '../api/labels'
 import IconButton from '@mui/material/IconButton'
 import LocalOfferIcon from '@mui/icons-material/LocalOffer'
+import BookmarkIcon from '@mui/icons-material/Bookmark'
+import FolderIcon from '@mui/icons-material/Folder'
+import StickyNote2Icon from '@mui/icons-material/StickyNote2'
 
 const Labels = () => {
   const dividerStyle = {
@@ -215,7 +226,13 @@ const Labels = () => {
         <DialogContent>
           {selectedNotebook && (
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                gutterBottom
+                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                <BookmarkIcon fontSize="small" />
                 Notebook: {selectedNotebook.name}
               </Typography>
 
@@ -253,7 +270,13 @@ const Labels = () => {
 
           {selectedSection && (
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                gutterBottom
+                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                <FolderIcon fontSize="small" />
                 Section: {selectedSection.title}
               </Typography>
 
@@ -291,7 +314,13 @@ const Labels = () => {
 
           {selectedNote && (
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                gutterBottom
+                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                <StickyNote2Icon fontSize="small" />
                 Note: {selectedNote.title}
               </Typography>
 
