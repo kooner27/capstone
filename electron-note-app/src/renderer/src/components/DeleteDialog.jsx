@@ -9,11 +9,13 @@ import { useState } from 'react'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
 import {
+  Box,
   Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Divider,
   Typography,
   FormGroup,
   FormControlLabel,
@@ -22,6 +24,9 @@ import {
   Alert
 } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
+import BookmarkIcon from '@mui/icons-material/Bookmark'
+import FolderIcon from '@mui/icons-material/Folder'
+import StickyNote2Icon from '@mui/icons-material/StickyNote2'
 
 const DeleteDialog = () => {
   const [open, setOpen] = useState(false)
@@ -137,70 +142,132 @@ const DeleteDialog = () => {
         <DeleteIcon />
       </IconButton>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Delete Item</DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              minHeight: 500,
+              maxHeight: 600,
+              overflowY: 'auto'
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold' }}>Delete Items</DialogTitle>
+        <Divider sx={{ my: 1 }} />
+
+        <DialogContent sx={{ px: 4, py: 3, fontSize: '1.1rem' }}>
           <FormGroup>
             {selectedNotebook && (
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={deleteNotebook}
-                    onChange={() => {
-                      // When selecting notebook, deselect others
-                      // It makes sense to only have one selection at a time
-                      setDeleteNotebook(true)
-                      setDeleteSection(false)
-                      setDeleteNote(false)
-                    }}
-                  />
-                }
-                label={`Notebook: ${selectedNotebook.name}`}
-              />
+              <Box sx={{ mb: 3 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={deleteNotebook}
+                      onChange={() => {
+                        setDeleteNotebook(true)
+                        setDeleteSection(false)
+                        setDeleteNote(false)
+                      }}
+                    />
+                  }
+                  label={
+                    // <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                    //   Notebook: {selectedNotebook.name}
+                    // </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}
+                    >
+                      <BookmarkIcon fontSize="small" />
+                      Notebook: {selectedNotebook.name}
+                    </Typography>
+                  }
+                />
+              </Box>
             )}
 
             {selectedSection && (
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={deleteSection}
-                    onChange={() => {
-                      setDeleteNotebook(false)
-                      setDeleteSection(true)
-                      setDeleteNote(false)
-                    }}
-                  />
-                }
-                label={`Section: ${selectedSection.title}`}
-              />
+              <Box sx={{ mb: 3 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={deleteSection}
+                      onChange={() => {
+                        setDeleteNotebook(false)
+                        setDeleteSection(true)
+                        setDeleteNote(false)
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography
+                      sx={{
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}
+                    >
+                      <FolderIcon fontSize="small" />
+                      Section: {selectedSection.title}
+                    </Typography>
+                  }
+                />
+              </Box>
             )}
 
             {selectedNote && (
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={deleteNote}
-                    onChange={() => {
-                      setDeleteNotebook(false)
-                      setDeleteSection(false)
-                      setDeleteNote(true)
-                    }}
-                  />
-                }
-                label={`Note: ${selectedNote.title}`}
-              />
+              <Box sx={{ mb: 3 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={deleteNote}
+                      onChange={() => {
+                        setDeleteNotebook(false)
+                        setDeleteSection(false)
+                        setDeleteNote(true)
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography
+                      sx={{
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}
+                    >
+                      <StickyNote2Icon fontSize="small" />
+                      Note: {selectedNote.title}
+                    </Typography>
+                  }
+                />
+              </Box>
             )}
           </FormGroup>
 
           {/* Alert messages when deleting a section or entire notebook */}
           {deleteNotebook && selectedNotebook && (
-            <Alert severity="warning" sx={{ mt: 2 }}>
+            <Alert severity="warning" sx={{ mt: 0 }}>
               Deleting this notebook will also delete all its sections and notes.
             </Alert>
           )}
 
           {deleteSection && selectedSection && (
-            <Alert severity="warning" sx={{ mt: 2 }}>
+            <Alert severity="warning" sx={{ mt: 0 }}>
               Deleting this section will also delete all its notes.
             </Alert>
           )}
@@ -212,7 +279,7 @@ const DeleteDialog = () => {
           )}
 
           {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
+            <Alert severity="error" sx={{ mt: 0 }}>
               {error}
             </Alert>
           )}
