@@ -63,28 +63,25 @@ export const NotebookProvider = ({ children }) => {
     }
   }, [selectedSection])
 
-  // This is the updated useEffect hook to handle note selection while in edit mode
   useEffect(() => {
     if (selectedNote) {
       DEBUG && console.log('[DEBUG] Note selected/changed:', selectedNote._id)
-      
-      // Check if we're selecting a different note than the one we're currently editing
+
       if (isEditMode && editingNoteRef.current && editingNoteRef.current !== selectedNote._id) {
-        DEBUG && console.log('[DEBUG] Different note selected while in edit mode - exiting edit mode')
-        
-        // Save content of the previous note if needed
+        DEBUG &&
+          console.log('[DEBUG] Different note selected while in edit mode - exiting edit mode')
+
         if (isDirty) {
           DEBUG && console.log('[DEBUG] Changes detected, saving content before switching notes')
           saveContent()
         }
-        
-        // Exit edit mode
+
         DEBUG && console.log('[DEBUG] Exiting edit mode due to note selection change')
         setIsEditMode(false)
         setIsPreviewMode(false)
         setIsDirty(false)
       }
-      
+
       if (!isEditMode || editingNoteRef.current !== selectedNote._id) {
         DEBUG && console.log('[DEBUG] Setting original content to:', selectedNote.content || '')
         setOriginalNoteContent(selectedNote.content || '')

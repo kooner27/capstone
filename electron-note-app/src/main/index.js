@@ -306,6 +306,7 @@ async function importFromBackupZip(event) {
   }
 }
 
+
 function ensureAppDataDir() {
   if (!fs.existsSync(APP_DATA_DIR)) {
     fs.mkdirSync(APP_DATA_DIR, { recursive: true })
