@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Box, Typography, IconButton, CircularProgress, Tooltip } from '@mui/material'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import ClearIcon from '@mui/icons-material/Clear'
 
 const executionResultsStore = {}
 
@@ -90,6 +91,11 @@ const CodeBlock = ({ code, language, index, noteId }) => {
     } finally {
       setIsExecuting(false)
     }
+  }
+
+  const handleClearOutput = () => {
+    setExecutionResult(null)
+    delete executionResultsStore[blockId]
   }
 
   const executeJavaScript = (code) => {
@@ -350,8 +356,26 @@ const CodeBlock = ({ code, language, index, noteId }) => {
         )}
 
         {}
-        <Tooltip title={`Run ${language || 'code'}`}>
-          <Box sx={{ display: 'inline-flex' }}>
+        <Box sx={{ display: 'inline-flex' }}>
+          {executionResult && (
+            <Tooltip title="Clear output">
+              <IconButton
+                size="small"
+                onClick={handleClearOutput}
+                sx={{
+                  color: '#abb2bf',
+                  backgroundColor: 'rgba(224, 108, 117, 0.1)',
+                  mr: 1,
+                  '&:hover': {
+                    backgroundColor: 'rgba(224, 108, 117, 0.2)'
+                  }
+                }}
+              >
+                <ClearIcon sx={{ color: '#e06c75', fontSize: '1rem' }} />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title={`Run ${language || 'code'}`}>
             <IconButton
               size="small"
               onClick={handleRunCode}
@@ -370,8 +394,8 @@ const CodeBlock = ({ code, language, index, noteId }) => {
                 <PlayArrowIcon sx={{ color: '#61afef' }} />
               )}
             </IconButton>
-          </Box>
-        </Tooltip>
+          </Tooltip>
+        </Box>
       </Box>
 
       {}
@@ -400,9 +424,11 @@ const CodeBlock = ({ code, language, index, noteId }) => {
             borderRadius: '0 0 4px 4px'
           }}
         >
-          <Typography variant="subtitle2" sx={{ color: '#98c379' }}>
-            Output:
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle2" sx={{ color: '#98c379' }}>
+              Output:
+            </Typography>
+          </Box>
 
           {}
           {!executionResult.success && executionResult.error && (
