@@ -555,12 +555,12 @@ const ContentArea = () => {
     )
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h4">{selectedNote.title}</Typography>
 
       <Box
         sx={{
-          height: '850px',
+          flex: 1,
           overflowY: 'auto',
           pl: 0,
           pr: 0,
