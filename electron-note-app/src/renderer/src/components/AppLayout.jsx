@@ -13,14 +13,21 @@ const AppLayout = () => {
     <NotebookDataProvider>
       <NotebookProvider>
         <Box
-          sx={{ display: 'grid', gridTemplateRows: 'auto 1fr', height: '100vh', width: '100vw' }}
+          sx={{ 
+            display: 'grid', 
+            gridTemplateRows: 'auto 1fr', 
+            height: '100vh', 
+            width: '100vw',
+            overflow: 'hidden'
+          }}
         >
           <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: sidebarOpen ? `auto 1px 1fr` : `1fr`,
-              height: '100%'
+              gridTemplateColumns: sidebarOpen ? `minmax(auto, max-content) 1px 1fr` : `1fr`,
+              height: '100%',
+              overflow: 'hidden'
             }}
           >
             {sidebarOpen && <Sidebar />}
