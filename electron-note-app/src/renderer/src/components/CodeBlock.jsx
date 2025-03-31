@@ -315,7 +315,6 @@ const CodeBlock = ({ code, language, index, noteId }) => {
         whiteSpace: 'pre-wrap'
       }}
     >
-      {}
       <Box
         sx={{
           display: 'flex',
@@ -324,7 +323,6 @@ const CodeBlock = ({ code, language, index, noteId }) => {
           mb: 1
         }}
       >
-        {}
         {language && (
           <Typography
             variant="caption"
@@ -337,7 +335,6 @@ const CodeBlock = ({ code, language, index, noteId }) => {
           </Typography>
         )}
 
-        {}
         {language && language.toLowerCase() === 'python' && venvStatus.checked && (
           <Typography
             variant="caption"
@@ -355,7 +352,6 @@ const CodeBlock = ({ code, language, index, noteId }) => {
           </Typography>
         )}
 
-        {}
         <Box sx={{ display: 'inline-flex' }}>
           {executionResult && (
             <Tooltip title="Clear output">
@@ -398,7 +394,6 @@ const CodeBlock = ({ code, language, index, noteId }) => {
         </Box>
       </Box>
 
-      {}
       <Typography
         component="pre"
         sx={{
@@ -413,7 +408,6 @@ const CodeBlock = ({ code, language, index, noteId }) => {
         {code}
       </Typography>
 
-      {}
       {executionResult && (
         <Box
           sx={{
@@ -430,69 +424,85 @@ const CodeBlock = ({ code, language, index, noteId }) => {
             </Typography>
           </Box>
 
-          {}
-          {!executionResult.success && executionResult.error && (
-            <Box sx={{ mt: 1, p: 1, backgroundColor: 'rgba(224, 108, 117, 0.1)', borderRadius: 1 }}>
-              <Typography sx={{ color: '#e06c75', fontWeight: 'bold' }}>
-                Error: {executionResult.error}
-              </Typography>
-              {executionResult.stack && (
-                <Typography
-                  variant="caption"
-                  component="pre"
-                  sx={{
-                    color: '#e06c75',
-                    mt: 1,
-                    whiteSpace: 'pre-wrap',
-                    fontSize: '0.7rem',
-                    opacity: 0.7
-                  }}
-                >
-                  {executionResult.stack}
+          {/* Scrollable output container with max height */}
+          <Box
+            sx={{
+              maxHeight: '200px', // Set the maximum height you want
+              overflowY: 'auto', // Enable vertical scrolling
+              scrollbarWidth: 'thin', // For Firefox
+              '&::-webkit-scrollbar': {
+                width: '8px'
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#282c34'
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#4b5263',
+                borderRadius: '4px'
+              }
+            }}
+          >
+            {!executionResult.success && executionResult.error && (
+              <Box sx={{ mt: 1, p: 1, backgroundColor: 'rgba(224, 108, 117, 0.1)', borderRadius: 1 }}>
+                <Typography sx={{ color: '#e06c75', fontWeight: 'bold' }}>
+                  Error: {executionResult.error}
                 </Typography>
-              )}
-            </Box>
-          )}
-
-          {}
-          {executionResult.logs && executionResult.logs.length > 0 && (
-            <Box sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ color: '#61afef', display: 'block', mb: 0.5 }}>
-                {language === 'python' ? 'Python Output:' : 'Console Output:'}
-              </Typography>
-              <Box
-                sx={{
-                  pl: 1,
-                  borderLeft: '2px solid #3a3f4b',
-                  ml: 1
-                }}
-              >
-                {executionResult.logs.map((log, i) => (
+                {executionResult.stack && (
                   <Typography
-                    key={i}
-                    variant="body2"
+                    variant="caption"
+                    component="pre"
                     sx={{
-                      color: getLogColor(log.type),
-                      fontSize: '0.85rem',
-                      fontFamily: 'inherit',
-                      whiteSpace: 'pre-wrap'
+                      color: '#e06c75',
+                      mt: 1,
+                      whiteSpace: 'pre-wrap',
+                      fontSize: '0.7rem',
+                      opacity: 0.7
                     }}
                   >
-                    {log.type === 'error' ? '🔴 ' : log.type === 'warn' ? '⚠️ ' : ''}
-                    {log.content}
+                    {executionResult.stack}
                   </Typography>
-                ))}
+                )}
               </Box>
-            </Box>
-          )}
-
-          {}
-          {executionResult.success &&
-            (!executionResult.logs || executionResult.logs.length === 0) && (
-              <Typography sx={{ color: '#98c379', fontStyle: 'italic', mt: 1 }}>
-                Code executed successfully with no output.
-              </Typography>
             )}
+
+            {executionResult.logs && executionResult.logs.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" sx={{ color: '#61afef', display: 'block', mb: 0.5 }}>
+                  {language === 'python' ? 'Python Output:' : 'Console Output:'}
+                </Typography>
+                <Box
+                  sx={{
+                    pl: 1,
+                    borderLeft: '2px solid #3a3f4b',
+                    ml: 1
+                  }}
+                >
+                  {executionResult.logs.map((log, i) => (
+                    <Typography
+                      key={i}
+                      variant="body2"
+                      sx={{
+                        color: getLogColor(log.type),
+                        fontSize: '0.85rem',
+                        fontFamily: 'inherit',
+                        whiteSpace: 'pre-wrap'
+                      }}
+                    >
+                      {log.type === 'error' ? '🔴 ' : log.type === 'warn' ? '⚠️ ' : ''}
+                      {log.content}
+                    </Typography>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {executionResult.success &&
+              (!executionResult.logs || executionResult.logs.length === 0) && (
+                <Typography sx={{ color: '#98c379', fontStyle: 'italic', mt: 1 }}>
+                  Code executed successfully with no output.
+                </Typography>
+              )}
+          </Box>
         </Box>
       )}
     </Box>
