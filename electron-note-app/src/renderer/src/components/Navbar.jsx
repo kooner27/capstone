@@ -8,9 +8,14 @@ import {
   Box,
   Snackbar,
   Alert,
-  Divider
+  Divider,
+  Tooltip
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
+import EditIcon from '@mui/icons-material/Edit'
+import SaveIcon from '@mui/icons-material/Save'
+import CloseIcon from '@mui/icons-material/Close'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import { useNavigate } from 'react-router-dom'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'
@@ -214,77 +219,89 @@ const Navbar = ({ toggleSidebar }) => {
             TwoNote
           </Typography>
 
-          {}
           <Box sx={{ flexGrow: 0.1 }} />
           <SearchBar />
 
-          <Box sx={{ flexGrow: 0.3 }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Button
-              color="inherit"
-              onClick={handleCancelClick}
-              variant="text"
-              sx={{
-                visibility: isEditMode ? 'visible' : 'hidden',
-                width: 80
-              }}
-            >
-              Exit
-            </Button>
-            <Button
-              color="inherit"
-              onClick={isEditMode && !isPreviewMode ? handleSaveClick : handleEditClick}
-              disabled={!selectedNote}
-              variant={isEditMode && !isPreviewMode ? 'contained' : 'text'}
-              sx={{
-                width: 80,
-                minWidth: 80,
-                visibility: !selectedNote ? 'hidden' : 'visible',
-                bgcolor: isEditMode && !isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-                '&:hover': {
-                  bgcolor:
-                    isEditMode && !isPreviewMode
-                      ? 'rgba(255, 255, 255, 0.25)'
-                      : 'rgba(255, 255, 255, 0.08)'
-                }
-              }}
-            >
-              {isEditMode ? (isPreviewMode ? 'Edit' : 'Save') : 'Edit'}
-            </Button>
-            <Button
-              color="inherit"
-              onClick={handleViewClick}
-              disabled={!selectedNote}
-              variant={isPreviewMode ? 'contained' : 'text'}
-              sx={{
-                width: 80,
-                minWidth: 80,
-                bgcolor: isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-                visibility: isEditMode ? 'visible' : 'hidden',
-                '&:hover': {
-                  bgcolor: isPreviewMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
-                }
-              }}
-            >
-              View
+          <Box sx={{ flexGrow: 1 }} />
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              '& > *': {
+                mx: 0.5  // Add consistent margin to all direct children
+              }
+            }}
+          >
+            <Tooltip title="Exit Edit Mode" placement="bottom">
+              <IconButton
+                color="inherit"
+                onClick={handleCancelClick}
+                sx={{
+                  visibility: isEditMode ? 'visible' : 'hidden',
+                  p: 1,
+                  bgcolor: 'transparent',
+                  borderRadius: 1
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Preview" placement="bottom">
+              <span>
+                <IconButton
+                  color="inherit"
+                  onClick={handleViewClick}
+                  disabled={!selectedNote}
+                  sx={{
+                    p: 1,
+                    bgcolor: isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                    visibility: isEditMode ? 'visible' : 'hidden',
+                    borderRadius: 1,
+                    '&:hover': {
+                      bgcolor: isPreviewMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
+                    }
+                  }}
+                >
+                  <VisibilityIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title={isEditMode && !isPreviewMode ? "Save" : "Edit"} placement="bottom">
+              <span>
+                <IconButton
+                  color="inherit"
+                  onClick={isEditMode && !isPreviewMode ? handleSaveClick : handleEditClick}
+                  disabled={!selectedNote}
+                  sx={{
+                    p: 1,
+                    visibility: !selectedNote ? 'hidden' : 'visible',
+                    bgcolor: isEditMode && !isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                    borderRadius: 1,
+                    '&:hover': {
+                      bgcolor:
+                        isEditMode && !isPreviewMode
+                          ? 'rgba(255, 255, 255, 0.25)'
+                          : 'rgba(255, 255, 255, 0.08)'
+                    }
+                  }}
+                >
+                  {isEditMode && !isPreviewMode ? <SaveIcon /> : <EditIcon />}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <DeleteDialog />
+            <Labels />
+            <RequirementsManager />
+            <ImportExport />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ mx: 1, bgcolor: 'rgba(255, 255, 255, 0.3)' }}
+            />
+            <Button color="inherit" onClick={handleLogout}>
+              Logout
             </Button>
           </Box>
-          {}
-          <Box sx={{ flexGrow: 1 }} />
-          <DeleteDialog />
-          <Labels />
-
-          <RequirementsManager />
-
-          <ImportExport />
-          <Divider
-            orientation="vertical"
-            flexItem
-            sx={{ mx: 1, bgcolor: 'rgba(255, 255, 255, 0.3)' }}
-          />
-          <Button color="inherit" onClick={handleLogout}>
-            Logout
-          </Button>
         </Toolbar>
       </AppBar>
 
