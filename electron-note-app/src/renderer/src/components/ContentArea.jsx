@@ -555,18 +555,33 @@ const ContentArea = () => {
     )
 
   return (
-    <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <Typography variant="h4">{selectedNote.title}</Typography>
 
       <Box
         sx={{
           flex: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
           pl: 0,
           pr: 0,
           py: 1,
           mt: 2,
-          backgroundColor: 'transparent'
+          backgroundColor: 'transparent',
+          position: 'relative',
+          '&::-webkit-scrollbar': {
+            width: '8px'
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'rgba(0,0,0,0.1)'
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: '#4b5263',
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: '#5c6370'
+            }
+          }
         }}
       >
         {isEditMode ? (

@@ -18,7 +18,12 @@ const AppLayout = () => {
             gridTemplateRows: 'auto 1fr', 
             height: '100vh', 
             width: '100vw',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
           }}
         >
           <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
@@ -27,7 +32,8 @@ const AppLayout = () => {
               display: 'grid',
               gridTemplateColumns: sidebarOpen ? `minmax(auto, max-content) 1px 1fr` : `1fr`,
               height: '100%',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              position: 'relative'
             }}
           >
             {sidebarOpen && <Sidebar />}
