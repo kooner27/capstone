@@ -4,7 +4,8 @@
 
 - [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
-Please try to use Linux for development and to run for grading if possible. \
+Please try to use Linux for development.\
+For grading please try to use the linux running instructions.\
 Although windows development instructions are given later, it is much easier to setup on linux.
 ## **Running Inustructions for Developers (Linux)**
 ### **1. Install prerequisites**
@@ -13,7 +14,11 @@ sudo apt update
 sudo apt install python3 python3-pip python3-venv
 pip3 --version
 python3 --version
+node --version
 ```
+It is recommended to install nodejs for linux using nvm with npm:\
+https://nodejs.org/en/download
+
 If MongoDB is not installed on your system, install it:
 https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-ubuntu/#std-label-install-mdb-community-ubuntu
 Do not use sudo apt install mongodb. Get the community edition. Also the vscode mongodb extension and mongosh maybe useful for development to see your collections.
@@ -22,43 +27,15 @@ Do not use sudo apt install mongodb. Get the community edition. Also the vscode 
 
 
 ### **2. Clone the Repository**
-First, clone the repository to your local machine:
+Clone the repository to your local machine from github or the git ECE server.
 
 ```bash
-git clone https://github.com/your-username/capstone-note-app.git
-cd capstone-note-app
+git clone https://github.com/kooner27/capstone.git
+cd capstone
 ```
 
 ---
-
-### **3. Navigate to the Backend Folder**
-```bash
-cd backend
-```
-
-### **4. Set Up a Virtual Environment**
-Create and activate a Python virtual environment:
-
-- **Linux/macOS:**
-  ```bash
-  python3 -m venv venv
-  source venv/bin/activate
-  ```
-- **Windows (PowerShell):**
-  ```powershell
-  python -m venv venv
-  venv\Scripts\activate
-  ```
----
-
-### **5. Install Required Dependencies**
-Ensure all dependencies are installed using `requirements.txt`:
-
-```bash
-pip3 install -r requirements.txt
-```
-
-### **6. Start MongoDB Locally**
+### **3. Start MongoDB Locally**
 Start mongodb with a custom path for development: 
 ```bash
 cd backend
@@ -70,20 +47,34 @@ In production it will be run like this but for most development please use the a
 ```bash
 sudo systemctl start mongod
 ```
+---
+### **4. Set Up a Virtual Environment**
+Create and activate a Python virtual environment:
 
+  ```bash
+  cd backend
+  python3 -m venv venv
+  source venv/bin/activate
+  ```
+---
 
-### **7. Start the Flask Backend**
+### **5. Install Required Dependencies**
+Ensure all dependencies are installed using `requirements.txt`:
+
+```bash
+pip3 install -r requirements.txt
+```
+
+### **6. Start the Flask Backend**
 Once MongoDB is running, start the backend. Remember to do it in a venv.
 
 ```bash
-source venv/bin/activate
-cd backend
 python3 app.py
 ```
 
-By default, Flask will run on **http://127.0.0.1:5000**.\
+By default, Flask will run on http://127.0.0.1:5000.\
 Check the api status endpoint in your browser:\
-**http://127.0.0.1:5000/api/**\
+http://127.0.0.1:5000/api/\
 alternatively you can check with curl:\
 curl http://127.0.0.1:5000/api/
 
@@ -91,17 +82,17 @@ curl http://127.0.0.1:5000/api/
 
 ## **Frontend Setup (Electron + React)**
 
-### **8. Navigate to the Electron App**
+### **7. Navigate to the Electron App**
 ```bash
 cd electron-note-app
 ```
 
-### **9. Install Dependencies**
+### **8. Install Dependencies**
 ```bash
 npm install
 ```
 
-### **10. Start the Electron App**
+### **9. Start the Electron App**
 Run the app in development mode:
 
 ```bash
@@ -118,12 +109,16 @@ This should launch the Electron app.
 git clone https://github.com/kooner27/capstone.git
 cd capstone
 
+# Mongo setup
+cd backend
+mkdir mongodb-data
+mongod --dbpath=mongodb-data
+
 # Backend Setup
 cd backend
 python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
-mongod --dbpath=mongodb-data
 python3 app.py
 
 # Frontend Setup
@@ -134,7 +129,7 @@ npm run dev
 ---
 
 ## **Running Inustructions for Developers (Windows)**
-Please install python, nodejs, mongodb
+Please install python, nodejs, mongodb:\
 https://www.python.org/downloads/windows/\
 https://nodejs.org/en\
 https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-windows-unattended/\
