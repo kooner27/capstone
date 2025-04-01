@@ -1,9 +1,4 @@
-import {
-  HashRouter as Router,
-  Routes,
-  Route,
-  Navigate
-} from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 
 import SignIn from './components/sign-in/SignIn'
 import SignUp from './components/sign-up/SignUp'
@@ -15,10 +10,10 @@ import { isAuthenticated } from './api/auth'
 // Simple Protected Route component
 const ProtectedRoute = ({ children }) => {
   if (!isAuthenticated()) {
-    return <Navigate to="/signin" replace />;
+    return <Navigate to="/signin" replace />
   }
-  return children;
-};
+  return children
+}
 
 function App() {
   return (
@@ -27,27 +22,15 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={
-              isAuthenticated()
-                ? <Navigate to="/applayout" />
-                : <Navigate to="/signin" />
-            }
+            element={isAuthenticated() ? <Navigate to="/applayout" /> : <Navigate to="/signin" />}
           />
           <Route
             path="/signin"
-            element={
-              isAuthenticated()
-                ? <Navigate to="/applayout" />
-                : <SignIn />
-            }
+            element={isAuthenticated() ? <Navigate to="/applayout" /> : <SignIn />}
           />
           <Route
             path="/signup"
-            element={
-              isAuthenticated()
-                ? <Navigate to="/applayout" />
-                : <SignUp />
-            }
+            element={isAuthenticated() ? <Navigate to="/applayout" /> : <SignUp />}
           />
           <Route
             path="/dashboard"

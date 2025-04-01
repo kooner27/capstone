@@ -4,9 +4,24 @@
 
 - [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
-## **Getting Started with Development**
+Please try to use Linux for development and to run for grading if possible. \
+Although windows development instructions are given later, it is much easier to setup on linux.
+## **Running Inustructions for Developers (Linux)**
+### **1. Install prerequisites**
+```bash
+sudo apt update
+sudo apt install python3 python3-pip python3-venv
+pip3 --version
+python3 --version
+```
+If MongoDB is not installed on your system, install it:
+https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-ubuntu/#std-label-install-mdb-community-ubuntu
+Do not use sudo apt install mongodb. Get the community edition. Also the vscode mongodb extension and mongosh maybe useful for development to see your collections.
 
-### **1. Clone the Repository**
+---
+
+
+### **2. Clone the Repository**
 First, clone the repository to your local machine:
 
 ```bash
@@ -16,14 +31,12 @@ cd capstone-note-app
 
 ---
 
-## **Backend Setup (Flask + MongoDB)**
-
-### **2. Navigate to the Backend Folder**
+### **3. Navigate to the Backend Folder**
 ```bash
 cd backend
 ```
 
-### **3. Set Up a Virtual Environment**
+### **4. Set Up a Virtual Environment**
 Create and activate a Python virtual environment:
 
 - **Linux/macOS:**
@@ -36,31 +49,24 @@ Create and activate a Python virtual environment:
   python -m venv venv
   venv\Scripts\activate
   ```
+---
 
-### **4. Install Required Dependencies**
+### **5. Install Required Dependencies**
 Ensure all dependencies are installed using `requirements.txt`:
 
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
-### **5. Install MongoDB**
-If MongoDB is not installed on your system, install it:
-
-https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-ubuntu/#std-label-install-mdb-community-ubuntu
-
-Do not use sudo apt install mongodb. Get the community edition. Also the vscode mongodb extension and mongosh maybe useful for development to see your collections.
-
 ### **6. Start MongoDB Locally**
-I like to run it manually with a custom dbpath so i can see the collections in vscode and output on the terminal.
-I think this is better for development:
+Start mongodb with a custom path for development: 
 ```bash
 cd backend
 mkdir mongodb-data
 mongod --dbpath=mongodb-data
 ```
-Or if you want auto restart on boot, admin privileges, logging and config managed, and it running in the background.
-Of course in production it will be run like this:
+If you want auto restart on boot, admin priviliges or it running in the background you can do it this way.
+In production it will be run like this but for most development please use the above method.
 ```bash
 sudo systemctl start mongod
 ```
@@ -72,13 +78,14 @@ Once MongoDB is running, start the backend. Remember to do it in a venv.
 ```bash
 source venv/bin/activate
 cd backend
-python app.py
+python3 app.py
 ```
 
-By default, Flask will run on **http://127.0.0.1:5000**. Open your browser and check if it’s running.
-
-Check **http://127.0.0.1:5000/api**
-and **http://127.0.0.1:5000/api/notes**
+By default, Flask will run on **http://127.0.0.1:5000**.\
+Check the api status endpoint in your browser:\
+**http://127.0.0.1:5000/api/**\
+alternatively you can check with curl:\
+curl http://127.0.0.1:5000/api/
 
 ---
 
@@ -86,7 +93,7 @@ and **http://127.0.0.1:5000/api/notes**
 
 ### **8. Navigate to the Electron App**
 ```bash
-cd ../electron-note-app
+cd electron-note-app
 ```
 
 ### **9. Install Dependencies**
@@ -107,30 +114,79 @@ This should launch the Electron app.
 
 ## **Summary of Commands**
 ```bash
-# Clone repo
-git clone https://github.com/your-username/capstone-note-app.git
-cd capstone-note-app
+# Clone repo or get access to it from the ECE git server
+git clone https://github.com/kooner27/capstone.git
+cd capstone
 
 # Backend Setup
 cd backend
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 mongod --dbpath=mongodb-data
 python3 app.py
 
 # Frontend Setup
-cd ../electron-note-app
+cd electron-note-app
 npm install
 npm run dev
 ```
 ---
 
+## **Running Inustructions for Developers (Windows)**
+Please install python, nodejs, mongodb
+https://www.python.org/downloads/windows/\
+https://nodejs.org/en\
+https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-windows-unattended/\
+https://www.mongodb.com/try/download/community
+
+Make sure to choose the options for installing mongodb compass. And make sure python is in your path.\
+Please install python from the website instead of using your microsoft app store installation.
+
+```bash
+python --version
+pip --version
+node --version
+```
+
+
+Start Mongodb on windows. If you installed it as a net service you can type the following command into an admin powershell instance:
+```bash
+net start MongoDB
+```
+You should now be able to use MongoDB Compass which provides a GUI for managin your connections.\
+Create a new connection, leaving the URI the default one which is: mongodb://localhost:27017
+
+Next we setup the backend:
+```bash
+git clone https://github.com/kooner27/capstone.git
+cd capstone
+cd backend
+python -m venv venv
+pip3 install -r requirements.txt
+python app.py
+```
+
+Finally we setup the frontend and run the app
+```bash
+cd electron-note-app
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+npm install
+npm run dev
+```
+
+
+
 ## **Additional Notes**
 - Ensure **MongoDB is running** before starting Flask.
-- The **frontend will connect to `http://127.0.0.1:5000/api`**.
+- The **frontend will connect to `http://127.0.0.1:5000/api/`**.
+- You may also try to use change the env file to the url shown below to test connecting to the deployed app
+---
+### Deployment
 
-
-For deployment we will use mongodb atlas for the database. Then we just have to change the .env in the backend folder to use the cloud URI. The flask rest api can be hosted on vps. We just need to change the .env in the electron-note-app folder to use the hosted flask api url instead of localhost. We can run the electron build script to generate app images for linux or .exe for windows.
-
+- Host **Flask** and **MongoDB** on a VPS
+- Update the `.env` file in the frontend folder with the VPS's ip
+  ```env
+  VITE_API_URL=http://162.246.157.130:5000/api
+- Use electron's build tools to build executable for windows and linux
 ---
