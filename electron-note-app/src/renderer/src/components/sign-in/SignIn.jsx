@@ -28,6 +28,7 @@ import ForgotPassword from './components/ForgotPassword'
 import AppTheme from '../shared-theme/AppTheme'
 import ColorModeSelect from '../shared-theme/ColorModeSelect'
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons'
+import DarkModeInitializer from './DarkModeInit'
 
 import { loginUser } from '../../api/auth'
 
@@ -154,10 +155,12 @@ export default function SignIn(props) {
   }
 
   return (
-    <AppTheme {...props} mode="dark">
+    <AppTheme {...props}>
       <CssBaseline enableColorScheme />
       <SignInContainer direction="column" justifyContent="space-between">
         {/* <ColorModeSelect sx={{ position: 'fixed', top: '1rem', right: '1rem' }} /> */}
+        <DarkModeInitializer />
+
         <Card variant="outlined">
           {/* <SitemarkIcon /> This came with template, we don't need it. We can have our own logo later maybe */}
           <Typography
