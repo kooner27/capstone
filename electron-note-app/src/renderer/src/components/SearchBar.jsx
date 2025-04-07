@@ -1,3 +1,9 @@
+/*
+This code block is our search bar component
+It connects the UI and with the api calls and the context.
+It is necessary to implement section 4.5 of our SRS which is search and filter.
+It covers FR15, FR16 and FR17
+*/
 import React, { useState, useRef, useEffect } from 'react'
 import {
   TextField,

@@ -1,3 +1,8 @@
+/*
+This code block is for state management.
+It keeps the state lined up with the database using the api calls we implemented
+It is necessary for keeping track of the selecte notebook, section, note and various modes
+*/
 import { createContext, useContext, useState } from 'react'
 import {
   getUserNotebooks,

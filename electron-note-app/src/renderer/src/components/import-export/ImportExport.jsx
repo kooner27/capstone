@@ -1,3 +1,9 @@
+/*
+This code block is our import and export icon which goes in the navbar
+It handles being able to import and export individual notes.
+This is section 4.6 of our SRS.
+It covers FR 18, FR19, and FR20
+*/
 import { useState, useEffect } from 'react'
 import {
   Dialog,

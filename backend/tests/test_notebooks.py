@@ -35,7 +35,6 @@ def test_get_notebooks_valid_user(client):
     """Test getting notebooks for a valid user (equivalence class: valid user_id)"""
     user_id = "valid_user"
     
-    # Create a notebook first
     client.post(f"/api/users/{user_id}/notebooks", json={"name": "Test Notebook"})
     
     response = client.get(f"/api/users/{user_id}/notebooks")

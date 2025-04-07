@@ -1,3 +1,8 @@
+/*
+This code block is not a direct part of our implementation
+we were experimenting with MUI and themeing and ensuring routing worked
+so we kept this as an example if we ever need to test our routing or themeing
+*/
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'

@@ -1,3 +1,7 @@
+/*
+This component contains the buttons for editing, importing, exporting, saving, viewing, searching, labelling and deleting.
+Basically all note taking operation buttons are in the navbar component
+*/
 import {
   AppBar,
   Toolbar,
@@ -223,12 +227,12 @@ const Navbar = ({ toggleSidebar }) => {
           <SearchBar />
 
           <Box sx={{ flexGrow: 1 }} />
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
               '& > *': {
-                mx: 0.5  // Add consistent margin to all direct children
+                mx: 0.5 // Add consistent margin to all direct children
               }
             }}
           >
@@ -258,7 +262,9 @@ const Navbar = ({ toggleSidebar }) => {
                     visibility: isEditMode ? 'visible' : 'hidden',
                     borderRadius: 1,
                     '&:hover': {
-                      bgcolor: isPreviewMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
+                      bgcolor: isPreviewMode
+                        ? 'rgba(255, 255, 255, 0.25)'
+                        : 'rgba(255, 255, 255, 0.08)'
                     }
                   }}
                 >
@@ -266,7 +272,7 @@ const Navbar = ({ toggleSidebar }) => {
                 </IconButton>
               </span>
             </Tooltip>
-            <Tooltip title={isEditMode && !isPreviewMode ? "Save" : "Edit"} placement="bottom">
+            <Tooltip title={isEditMode && !isPreviewMode ? 'Save' : 'Edit'} placement="bottom">
               <span>
                 <IconButton
                   color="inherit"
@@ -275,7 +281,8 @@ const Navbar = ({ toggleSidebar }) => {
                   sx={{
                     p: 1,
                     visibility: !selectedNote ? 'hidden' : 'visible',
-                    bgcolor: isEditMode && !isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                    bgcolor:
+                      isEditMode && !isPreviewMode ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
                     borderRadius: 1,
                     '&:hover': {
                       bgcolor:

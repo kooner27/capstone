@@ -1,3 +1,9 @@
+/*
+This code block is for handling requirements management.
+Users can setup a python environment and download packages.
+This is necessary in order to setup code execution.
+It helps implement FR 7 and FR 10
+*/
 import React, { useState, useEffect } from 'react'
 import {
   Button,
