@@ -36,13 +36,10 @@ async function setupNoteHierarchy(page) {
 }
 
 test('Code block creation and UI test', async ({ page }) => {
-  // Sign in first
   await signIn(page)
 
-  // Create notebook, section and note
   await setupNoteHierarchy(page)
 
-  // Click on the edit button and enter edit mode
   await page.locator('button:has(svg[data-testid="EditIcon"])').click()
   const editableArea = page.locator('pre[contenteditable="true"]')
   await expect(editableArea).toBeVisible()
