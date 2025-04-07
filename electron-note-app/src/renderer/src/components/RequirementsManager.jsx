@@ -14,15 +14,7 @@ import {
   Step,
   StepLabel,
   Paper,
-  Divider,
   LinearProgress,
-  Tabs,
-  Tab,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
-  Tooltip,
   Card,
   CardContent,
   InputAdornment,
@@ -33,20 +25,20 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  TableSortLabel
+  TableSortLabel,
+  IconButton,
+  Tooltip
 } from '@mui/material'
 import TerminalIcon from '@mui/icons-material/Terminal'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
-import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import RefreshIcon from '@mui/icons-material/Refresh'
-import FilterListIcon from '@mui/icons-material/FilterList'
 import SearchIcon from '@mui/icons-material/Search'
 import AddIcon from '@mui/icons-material/Add'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 
-const DIALOG_CONTENT_HEIGHT = '550px'
-const TABLE_HEIGHT = '250px'
-const CONSOLE_HEIGHT = '300px'
+const DIALOG_CONTENT_HEIGHT = '500px'
+const TABLE_HEIGHT = '220px'
+const CONSOLE_HEIGHT = '250px'
 
 const RequirementsManager = () => {
   const [open, setOpen] = useState(false)
@@ -113,15 +105,13 @@ const RequirementsManager = () => {
 
     try {
       const result = await window.electron.listInstalledPackages()
-      console.log('Package list result:', result)
-
+      
       if (result.success) {
         let processedPackages = []
 
         if (Array.isArray(result.packages)) {
           const samplePackage = result.packages[0]
-          console.log('Sample package structure:', samplePackage)
-
+          
           if (samplePackage) {
             if (typeof samplePackage === 'object') {
               processedPackages = result.packages.map((pkg) => {
@@ -143,17 +133,14 @@ const RequirementsManager = () => {
           }
         }
 
-        console.log('Processed packages:', processedPackages)
         setInstalledPackages(processedPackages)
         setLogOutput((prev) => [...prev, `Found ${processedPackages.length} installed packages`])
       } else {
-        console.error('Error fetching packages:', result.error)
         setError(result.error || 'Failed to fetch installed packages')
         setLogOutput((prev) => [...prev, `Error: ${result.error}`])
         setInstalledPackages([])
       }
     } catch (error) {
-      console.error('Exception fetching packages:', error)
       setError(`Error fetching installed packages: ${error.message}`)
       setLogOutput((prev) => [...prev, `Error: ${error.message}`])
       setInstalledPackages([])
@@ -306,7 +293,7 @@ const RequirementsManager = () => {
       })
 
       setVenvExists(true)
-      setLogOutput((prev) => [...prev, 'Virtual environment created/updated successfully'])
+      setLogOutput((prev) => [...prev, 'Virtual environment created successfully'])
       return true
     } catch (error) {
       setError(`Error creating virtual environment: ${error.message}`)
@@ -330,20 +317,8 @@ const RequirementsManager = () => {
     }
 
     setLoading(true)
-    setLogOutput((prev) => [...prev, `Starting installation process for ${selectedFile.name}...`])
-    setLogOutput((prev) => [
-      ...prev,
-      `Multiple installation strategies will be attempted automatically.`
-    ])
-
-    setLogOutput((prev) => [
-      ...prev,
-      'This may take several minutes, especially for scientific packages.'
-    ])
-    setLogOutput((prev) => [
-      ...prev,
-      'The window might appear unresponsive but installation is running...'
-    ])
+    setLogOutput((prev) => [...prev, `Starting installation for ${selectedFile.name}...`])
+    setLogOutput((prev) => [...prev, 'This may take several minutes. Please wait...'])
 
     setProgressDeterminate(false)
     setInstallationProgress(0)
@@ -352,7 +327,7 @@ const RequirementsManager = () => {
       setLogOutput((prev) => {
         const progressMessages = prev.filter((msg) => msg.includes('Still working'))
         if (progressMessages.length < 3) {
-          return [...prev, `Still working - please wait, installation in progress...`]
+          return [...prev, `Still working - installation in progress...`]
         }
         return prev
       })
@@ -371,12 +346,11 @@ const RequirementsManager = () => {
 
       setLogOutput((prev) => [
         ...prev,
-        `Installation is taking longer than expected.`,
-        `If you want to continue waiting, you can, but you may need to restart the app if it appears stuck.`
+        `Installation is taking longer than expected.`
       ])
 
       setError(
-        'Installation is taking longer than expected, but may still complete. Check the console log for updates.'
+        'Installation is taking longer than expected. Check the console log for updates.'
       )
     }, 300000)
 
@@ -421,25 +395,13 @@ const RequirementsManager = () => {
 
       setProgressDeterminate(true)
 
-      if (result.error && (result.error.includes('build') || result.error.includes('wheel'))) {
-        setLogOutput((prev) => [
-          ...prev,
-          `Build-related errors detected.`,
-          `These often occur with scientific packages that need compilation.`,
-          `The installer attempted multiple strategies to work around these issues.`
-        ])
-      }
-
       if (result.success) {
         setInstallationProgress(100)
 
         if (result.partial) {
           setLogOutput((prev) => [
             ...prev,
-            `PARTIAL SUCCESS: Some packages were installed successfully`,
-            `Some packages could not be installed due to build errors`,
-            `You can still use the successfully installed packages`,
-            `For best results with scientific packages, consider using Anaconda Python instead`
+            `PARTIAL SUCCESS: Some packages were installed successfully`
           ])
 
           setStatus({
@@ -459,8 +421,7 @@ const RequirementsManager = () => {
         } else {
           setLogOutput((prev) => [
             ...prev,
-            `SUCCESS: All packages installed successfully!`,
-            `Your Python environment is ready to use`
+            `SUCCESS: All packages installed successfully!`
           ])
 
           setStatus({
@@ -482,24 +443,6 @@ const RequirementsManager = () => {
         setInstallationProgress(0)
 
         setLogOutput((prev) => [...prev, `FAILED: Installation failed: ${result.error}`])
-
-        if (result.error.includes('build') || result.error.includes('wheel')) {
-          setLogOutput((prev) => [
-            ...prev,
-            `Build errors are common with scientific packages.`,
-            `Consider using Anaconda Python which includes pre-built packages:`,
-            `https://www.anaconda.com/download`,
-            `Or try a simpler requirements.txt with fewer scientific packages`
-          ])
-        } else if (result.error.includes('subprocess-exited-with-error')) {
-          setLogOutput((prev) => [
-            ...prev,
-            `This error often occurs with packages that need compilation.`,
-            `You may need to install Visual C++ Build Tools on Windows:`,
-            `https://visualstudio.microsoft.com/visual-cpp-build-tools/`,
-            `Or try using simpler packages that don't require compilation`
-          ])
-        }
 
         setStatus({
           ...status,
@@ -593,10 +536,7 @@ const RequirementsManager = () => {
   }
 
   const getFilteredPackages = () => {
-    console.log('Getting filtered packages from:', installedPackages)
-
     if (!installedPackages || !Array.isArray(installedPackages) || installedPackages.length === 0) {
-      console.log('No packages to filter')
       return []
     }
 
@@ -631,7 +571,6 @@ const RequirementsManager = () => {
         return 0
       })
 
-      console.log('Returning filtered list:', filteredList.length)
       return filteredList
     } catch (error) {
       console.error('Error in getFilteredPackages:', error)
@@ -649,9 +588,8 @@ const RequirementsManager = () => {
       case 0:
         return (
           <Box>
-            <DialogContentText>
-              Before we can set up a virtual environment and install packages, we need to check if
-              Python and pip are installed on your system.
+            <DialogContentText sx={{ mb: 2 }}>
+              First, we'll check if Python and pip are installed on your system.
             </DialogContentText>
 
             {status.python.checked && (
@@ -680,8 +618,7 @@ const RequirementsManager = () => {
                     rel="noopener noreferrer"
                   >
                     python.org
-                  </a>{' '}
-                  before continuing.
+                  </a>
                 </Typography>
               </Box>
             )}
@@ -691,9 +628,8 @@ const RequirementsManager = () => {
       case 1:
         return (
           <Box>
-            <DialogContentText>
-              Please select a requirements.txt file containing the Python packages you want to
-              install.
+            <DialogContentText sx={{ mb: 2 }}>
+              Select a requirements.txt file with the Python packages you want to install.
             </DialogContentText>
 
             {selectedFile && (
@@ -707,9 +643,8 @@ const RequirementsManager = () => {
       case 2:
         return (
           <Box>
-            <DialogContentText>
-              Now we'll set up a virtual environment for your Python packages. This keeps your
-              packages isolated from other Python projects.
+            <DialogContentText sx={{ mb: 2 }}>
+              We'll set up a virtual environment to keep your packages isolated from other projects.
             </DialogContentText>
 
             {status.venv.checked && (
@@ -725,23 +660,19 @@ const RequirementsManager = () => {
       case 3:
         return (
           <Box>
-            <DialogContentText>
-              Finally, we'll install the packages from your requirements.txt file into the virtual
-              environment.
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                <strong>Note:</strong> This process may take several minutes, especially for
-                scientific packages that require compilation. The window may appear unresponsive,
-                but the installation is running.
+            <DialogContentText sx={{ mb: 2 }}>
+              Finally, we'll install the packages from your requirements.txt file.
+              <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
+                This may take several minutes, especially for scientific packages.
               </Typography>
             </DialogContentText>
 
-            {}
             {(loading || installationProgress > 0) && (
               <Box sx={{ width: '100%', mt: 2 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   {progressDeterminate
                     ? `Installation progress: ${installationProgress}%`
-                    : 'Installing packages... (This may take several minutes)'}
+                    : 'Installing packages...'}
                 </Typography>
                 {progressDeterminate ? (
                   <LinearProgress
@@ -785,11 +716,6 @@ const RequirementsManager = () => {
               </Box>
             </Alert>
 
-            <DialogContentText>
-              You can now run Python code in this environment. All imported packages from your
-              requirements.txt file will be available.
-            </DialogContentText>
-
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -806,18 +732,6 @@ const RequirementsManager = () => {
                     <strong>Requirements File:</strong> {selectedFile.name}
                   </Typography>
                 )}
-                <Typography variant="body2">
-                  <strong>Virtual Environment:</strong>{' '}
-                  {status.venv.created ? 'Created successfully' : 'Not created'}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Packages Installation:</strong>{' '}
-                  {status.requirements.installed
-                    ? status.requirements.error
-                      ? 'Partial success (some packages failed)'
-                      : 'All packages installed successfully'
-                    : 'Not completed'}
-                </Typography>
               </CardContent>
             </Card>
           </Box>
@@ -830,7 +744,8 @@ const RequirementsManager = () => {
 
   const renderConsole = () => (
     <Paper
-      elevation={3}
+      elevation={0}
+      variant="outlined"
       sx={{
         mt: 2,
         p: 2,
@@ -843,7 +758,23 @@ const RequirementsManager = () => {
         borderRadius: 1
       }}
     >
-      <Box sx={{ height: CONSOLE_HEIGHT, overflow: 'auto' }}>
+      <Box sx={{ 
+        height: '100%', 
+        overflow: 'auto',
+        '&::-webkit-scrollbar': {
+          width: '8px'
+        },
+        '&::-webkit-scrollbar-track': {
+          backgroundColor: 'rgba(0,0,0,0.1)'
+        },
+        '&::-webkit-scrollbar-thumb': {
+          backgroundColor: '#4b5263',
+          borderRadius: '4px',
+          '&:hover': {
+            backgroundColor: '#5c6370'
+          }
+        }
+      }}>
         {logOutput.length === 0 ? (
           <Typography variant="body2" sx={{ color: '#888', fontStyle: 'italic' }}>
             Log output will appear here...
@@ -874,7 +805,7 @@ const RequirementsManager = () => {
   const renderPackagesView = () => (
     <Box>
       <DialogContentText>
-        This shows all Python packages installed in your virtual environment.
+        Python packages installed in your virtual environment:
       </DialogContentText>
 
       <Box
@@ -936,7 +867,7 @@ const RequirementsManager = () => {
             justifyContent: 'center'
           }}
         >
-          <Alert severity="warning" sx={{ mb: 2 }}>
+          <Alert severity="warning">
             No virtual environment found. Click "Install Packages" below to set up a virtual
             environment.
           </Alert>
@@ -950,7 +881,7 @@ const RequirementsManager = () => {
             justifyContent: 'center'
           }}
         >
-          <Alert severity="info" sx={{ mb: 2 }}>
+          <Alert severity="info">
             No packages installed in the virtual environment.
           </Alert>
         </Box>
@@ -958,7 +889,23 @@ const RequirementsManager = () => {
         <TableContainer
           component={Paper}
           variant="outlined"
-          sx={{ height: TABLE_HEIGHT, overflow: 'auto' }}
+          sx={{ 
+            height: TABLE_HEIGHT, 
+            overflow: 'auto',
+            '&::-webkit-scrollbar': {
+              width: '8px'
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'rgba(0,0,0,0.1)'
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#4b5263',
+              borderRadius: '4px',
+              '&:hover': {
+                backgroundColor: '#5c6370'
+              }
+            }
+          }}
         >
           <Table size="small" stickyHeader>
             <TableHead>
@@ -1007,26 +954,16 @@ const RequirementsManager = () => {
         </TableContainer>
       )}
 
-      {venvExists && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="caption" color="text.secondary">
-            These packages are installed in the virtual environment and can be imported in your
-            Python code.
-          </Typography>
-        </Box>
-      )}
-
-      {}
       <Card variant="outlined" sx={{ mt: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
             Environment Information
           </Typography>
           <Typography variant="body2">
-            <strong>Python Version:</strong> {pythonInfo.python.version || 'Unknown'}
+            <strong>Python:</strong> {pythonInfo.python.version || 'Unknown'}
           </Typography>
           <Typography variant="body2">
-            <strong>Pip Version:</strong> {pythonInfo.pip.version || 'Unknown'}
+            <strong>Pip:</strong> {pythonInfo.pip.version || 'Unknown'}
           </Typography>
           <Typography variant="body2">
             <strong>Virtual Environment:</strong> {venvExists ? 'Found' : 'Not found'}
@@ -1043,7 +980,6 @@ const RequirementsManager = () => {
           color="inherit"
           onClick={handleOpen}
           sx={{
-            mx: 1,
             padding: 0,
             display: 'flex',
             justifyContent: 'center',
@@ -1068,13 +1004,31 @@ const RequirementsManager = () => {
           }
         }}
       >
-        <DialogTitle>Python Package Manager</DialogTitle>
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)', pb: 1 }}>
+          Python Package Manager
+        </DialogTitle>
 
-        <DialogContent sx={{ height: DIALOG_CONTENT_HEIGHT, overflow: 'auto' }}>
+        <DialogContent sx={{ 
+          height: DIALOG_CONTENT_HEIGHT, 
+          p: 3,
+          '&::-webkit-scrollbar': {
+            width: '8px'
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'rgba(0,0,0,0.1)'
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: '#4b5263',
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: '#5c6370'
+            }
+          }
+        }}>
           {viewMode === 'wizard' ? (
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               {step < steps.length && (
-                <Stepper activeStep={step} sx={{ py: 3 }}>
+                <Stepper activeStep={step} sx={{ py: 2, mb: 2 }}>
                   {steps.map((label) => (
                     <Step key={label}>
                       <StepLabel>{label}</StepLabel>
@@ -1086,7 +1040,7 @@ const RequirementsManager = () => {
               <Box sx={{ mb: 2, flex: '0 0 auto' }}>{getStepContent(step)}</Box>
 
               {error && (
-                <Alert severity="error" sx={{ mt: 2, flex: '0 0 auto' }}>
+                <Alert severity="error" sx={{ mt: 2, mb: 2, flex: '0 0 auto' }}>
                   {error}
                 </Alert>
               )}
@@ -1104,7 +1058,7 @@ const RequirementsManager = () => {
           )}
         </DialogContent>
 
-        <DialogActions>
+        <DialogActions sx={{ borderTop: '1px solid rgba(0, 0, 0, 0.12)', p: 2 }}>
           {viewMode === 'wizard' ? (
             step === steps.length ? (
               <>
@@ -1123,14 +1077,18 @@ const RequirementsManager = () => {
               </>
             ) : (
               <>
-                <Button onClick={() => setViewMode('packages')} disabled={loading}>
+                <Button 
+                  onClick={() => setViewMode('packages')} 
+                  disabled={loading}
+                  variant="outlined"
+                >
                   {loading ? 'Please wait...' : 'Back to Package List'}
                 </Button>
 
                 <Box sx={{ flex: '1 1 auto' }} />
 
                 {step > 0 && step < steps.length && (
-                  <Button onClick={handleBack} disabled={loading}>
+                  <Button onClick={handleBack} disabled={loading} sx={{ mr: 1 }}>
                     Back
                   </Button>
                 )}

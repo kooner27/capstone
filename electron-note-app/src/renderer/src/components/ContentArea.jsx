@@ -83,11 +83,20 @@ const TextBlock = ({ textBlock, index }) => {
     em {
       font-style: italic !important;
     }
+    code {
+      font-family: monospace;
+      background-color: rgba(100, 100, 100, 0.15);
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 0.9em;
+      color: #e83e8c;
+      white-space: nowrap;
+    }
     ul { margin-top: 0.3em; margin-bottom: 0.5em; padding-left: 1.5em; list-style-type: disc; }
     li { margin-bottom: 0.2em; display: list-item; }
     hr { margin: 1em 0; border: none; height: 1px; background-color: #ddd; }
     img { max-width: 100%; height: auto; }
-    a.external-link { color: #0000EE; text-decoration: underline; cursor: pointer; }
+    a.external-link { color: #61dafb; text-decoration: underline; cursor: pointer; }
   `
 
   return (
@@ -169,6 +178,9 @@ const formatText = (text) => {
 
 const processInlineFormatting = (text) => {
   let processed = text
+
+  // Handle inline code with backticks
+  processed = processed.replace(/`([^`\n]+?)`/g, '<code>$1</code>')
 
   processed = processed.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
 
@@ -494,23 +506,6 @@ const ContentArea = () => {
     }
   }, [isEditMode, selectedNote])
 
-  if (isLoading && !selectedNote) {
-    DEBUG && console.log('[DEBUG] Rendering loading state')
-    return (
-      <Box
-        sx={{
-          p: 3,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%'
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    )
-  }
-
   if (error) {
     DEBUG && console.log('[DEBUG] Rendering error state:', error)
     return (
@@ -564,7 +559,7 @@ const ContentArea = () => {
           overflowY: 'auto',
           overflowX: 'hidden',
           pl: 0,
-          pr: 0,
+          pr: 2, // Added right padding to create space between content and scrollbar
           py: 1,
           mt: 2,
           backgroundColor: 'transparent',
