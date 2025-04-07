@@ -28,6 +28,14 @@ import StickyNote2Icon from '@mui/icons-material/StickyNote2'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
+// Consistent divider styling
+const dividerStyle = {
+  borderColor: 'rgba(30, 30, 30, 0.9)',
+  backgroundColor: 'rgba(30, 30, 30, 0.9)',
+  opacity: 1,
+  height: '1px'
+}
+
 const generateDefaultContent = (title) => {
   return `# ${title}\n\nThis is a sample markdown page. You can use **bold** or *italic* text.\n\n## Code Example\n\n\`\`\`javascript\nfunction hello() {\nconsole.log("Hello, world!");\n  return "Hello";\n}\n\`\`\`\n\n### Lists\n\n- Item one\n- Item two\n- Item three`
 }
@@ -183,8 +191,8 @@ const Sidebar = () => {
   if (!selectedNotebook) {
     return (
       <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider' }}>
-        <Toolbar sx={{ minHeight: 56, px: 2, justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Toolbar sx={{ minHeight: 56, px: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 40 }}>
             <BookmarkIcon fontSize="small" color="white" />
             <Typography variant="subtitle2" noWrap sx={{ maxWidth: 110 }}>
               Notebooks
@@ -197,14 +205,19 @@ const Sidebar = () => {
               sx={{
                 flexShrink: 0,
                 borderRadius: 1.5,
-                color: 'white'
+                color: 'white',
+                height: 40,
+                width: 40,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
               <NoteAddIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>
-        <Divider />
+        <Divider sx={dividerStyle} />
         <List dense>
           {notebooks.map((notebook) => (
             <ListItem
@@ -241,7 +254,6 @@ const Sidebar = () => {
           )}
         </List>
 
-        {}
         <Dialog
           open={isNotebookDialogOpen}
           onClose={handleCloseDialogs}
@@ -339,7 +351,6 @@ const Sidebar = () => {
 
   return (
     <Box sx={{ width: 600, display: 'flex' }}>
-      {}
       <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider', overflow: 'hidden' }}>
         <Toolbar
           sx={{
@@ -347,6 +358,7 @@ const Sidebar = () => {
             px: 2,
             display: 'flex',
             justifyContent: 'space-between',
+            alignItems: 'center',
             overflow: 'hidden'
           }}
         >
@@ -355,7 +367,8 @@ const Sidebar = () => {
               display: 'flex',
               alignItems: 'center',
               width: '100%',
-              gap: 1
+              gap: 1,
+              height: 40
             }}
           >
             <Tooltip title="Back to notebooks" placement="bottom">
@@ -364,7 +377,12 @@ const Sidebar = () => {
                 size="small"
                 sx={{
                   flexShrink: 0,
-                  color: 'white'
+                  color: 'white',
+                  height: 40,
+                  width: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 <ArrowBackIcon />
@@ -376,7 +394,9 @@ const Sidebar = () => {
                 overflow: 'hidden',
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',
-                maxWidth: 'calc(100% - 60px)'
+                maxWidth: 'calc(100% - 60px)',
+                display: 'flex',
+                alignItems: 'center'
               }}
             >
               <Typography
@@ -400,14 +420,19 @@ const Sidebar = () => {
               sx={{
                 flexShrink: 0,
                 borderRadius: 1.5,
-                color: 'white'
+                color: 'white',
+                height: 40,
+                width: 40,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
               <CreateNewFolderIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>
-        <Divider />
+        <Divider sx={dividerStyle} />
         {isLoading && !sections.length ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
             <CircularProgress size={24} />
@@ -465,7 +490,6 @@ const Sidebar = () => {
           </List>
         )}
 
-        {}
         <Dialog
           open={isSectionDialogOpen}
           onClose={handleCloseDialogs}
@@ -557,27 +581,29 @@ const Sidebar = () => {
         </Dialog>
       </Box>
 
-      {}
       <Box sx={{ width: 300 }}>
         <Toolbar
           sx={{
             minHeight: 56,
             px: 2,
             display: 'flex',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            alignItems: 'center'
           }}
         >
-          <Typography
-            variant="subtitle2"
-            noWrap
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: 'calc(100% - 60px)'
-            }}
-          >
-            {selectedSection ? `${selectedSection.title}` : 'Select a section'}
-          </Typography>
+          <Box sx={{ height: 40, display: 'flex', alignItems: 'center', flexGrow: 1, overflow: 'hidden', mr: 1 }}>
+            <Typography
+              variant="subtitle2"
+              noWrap
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: '100%'
+              }}
+            >
+              {selectedSection ? `${selectedSection.title}` : 'Select a section'}
+            </Typography>
+          </Box>
           {selectedSection && (
             <Tooltip title="Create new note" placement="bottom" TransitionComponent={Zoom}>
               <IconButton
@@ -586,7 +612,12 @@ const Sidebar = () => {
                 sx={{
                   flexShrink: 0,
                   borderRadius: 1.5,
-                  color: 'white'
+                  color: 'white',
+                  height: 40,
+                  width: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 <LibraryAddIcon />
@@ -594,7 +625,7 @@ const Sidebar = () => {
             </Tooltip>
           )}
         </Toolbar>
-        <Divider />
+        <Divider sx={dividerStyle} />
         {isLoading && selectedSection && !notes.length ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
             <CircularProgress size={24} />
@@ -653,7 +684,6 @@ const Sidebar = () => {
           </List>
         )}
 
-        {}
         <Dialog
           open={isNoteDialogOpen}
           onClose={handleCloseDialogs}
