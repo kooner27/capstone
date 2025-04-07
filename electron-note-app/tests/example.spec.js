@@ -1,3 +1,6 @@
+// Just the example playwright file it gives at the start
+// Useful for documentation and getting started
+
 // // @ts-check
 // import { test, expect } from '@playwright/test';
 

@@ -98,6 +98,7 @@ module.exports = defineConfig({
     video: 'on',
     screenshot: 'on'
   },
+  // globalSetup: './tests/setup.js',
   webServer: {
     command: 'npm run dev',
     port: 5173,
