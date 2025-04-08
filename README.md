@@ -185,3 +185,48 @@ npm run dev
   VITE_API_URL=http://162.246.157.130:5000/api
 - Use electron's build tools to build executable for windows and linux
 ---
+
+
+## **Testing Instructions**
+
+### **Backend Testing**
+Please follow the running instructions.
+You need to have at least MongoDB running. Other components are optional.
+
+```bash
+# Navigate to the project directory
+cd capstone
+cd backend
+
+# Run the test script
+bash run_tests.sh
+```
+---
+
+### **Frontend and End to End testing**
+Again please follow the running instructions. MongoDB and Flask should be running. You do not need the Electron app itself to be running.
+
+```bash
+# Navigate to the project directory
+cd capstone
+cd electron-note-app
+
+# Install test requirements
+cd tests
+pip3 install -r requirements.txt
+
+# Navigate back to the electron-note-app directory
+cd ..
+
+# Run the setup script to prepare test environment
+python3 tests/setup.py
+
+# Run Playwright tests
+npx playwright test
+```
+
+### **Troubleshooting Tests**
+- If a test case fails, try running the setup script again: `python3 tests/setup.py`
+- Some tests may fail due to timing issues if elements render too slowly
+- To view detailed failure reports including screenshots and videos, click the localhost link provided in the terminal after test execution
+- To run a specific test file, use: `npx playwright test tests/filename.spec.js`
