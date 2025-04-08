@@ -100,7 +100,7 @@ test.describe('Search Functionality', () => {
       resultsPopper.locator('.MuiChip-label').getByText('note', { exact: true })
     ).toBeVisible()
 
-    // Delete notebook (using the existing notebook from hierarchy creation)
+    // Delete notebook
     await page.locator('button[title="Delete"]').click()
     await page.locator('input[type="checkbox"]').first().check()
     await page.getByRole('button', { name: 'Delete' }).click()
