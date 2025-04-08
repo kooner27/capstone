@@ -204,7 +204,18 @@ bash run_tests.sh
 ---
 
 ### **Frontend and End to End testing**
-Again please follow the running instructions. MongoDB and Flask should be running. You do not need the Electron app itself to be running.
+Again please follow the running instructions. MongoDB and Flask should be running. You do not need the Electron app itself to be running. \
+
+Please install playwright if you do not have it:\
+https://playwright.dev/docs/intro
+
+```bash
+npm install -D @playwright/test@latest
+# Also download new browser binaries and their dependencies:
+npx playwright install --with-deps
+```
+
+
 
 ```bash
 # Navigate to the project directory
