@@ -1,3 +1,8 @@
+/*
+This code block is our side bar component.
+It handles notebook hierarchy management which is section 4.4 of our SRS
+It covers FR11, FR12, FR13
+*/
 import { useState, useEffect } from 'react'
 import { useNotebook } from './NotebookContext'
 import { useNotebookData } from './NotebookDataContext'

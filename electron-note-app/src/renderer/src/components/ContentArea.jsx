@@ -1,3 +1,9 @@
+/*
+This code block is the content area in the note taking app.
+It is for editing markdown notes and rendering them.
+It helps implements the requirements in section 4.3
+including FR6, FR7, and FR9
+*/
 import React, { useEffect, useRef, useState } from 'react'
 import { Box, Typography, Button, CircularProgress } from '@mui/material'
 import { useNotebook } from './NotebookContext'
@@ -550,7 +556,9 @@ const ContentArea = () => {
     )
 
   return (
-    <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Box
+      sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+    >
       <Typography variant="h4">{selectedNote.title}</Typography>
 
       <Box

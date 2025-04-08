@@ -1,3 +1,9 @@
+/*
+This code block is the main node js process running in electron
+It exposes lower level apis necessary for code execution and import/export functionality
+It handles hierarchical import export as well as local code execution.
+It covers FR26, FR27, and FR28
+*/
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -305,7 +311,6 @@ async function importFromBackupZip(event) {
     }
   }
 }
-
 
 function ensureAppDataDir() {
   if (!fs.existsSync(APP_DATA_DIR)) {

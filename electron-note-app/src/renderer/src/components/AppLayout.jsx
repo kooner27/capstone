@@ -1,3 +1,7 @@
+/*
+This code block is necessary as it is the layout of our app consisting of various react components
+It consists of our context, navbar, sidebar and content which are our main components.
+*/
 import React, { useState } from 'react'
 import { Box, Divider } from '@mui/material'
 import Navbar from './Navbar'
@@ -13,10 +17,10 @@ const AppLayout = () => {
     <NotebookDataProvider>
       <NotebookProvider>
         <Box
-          sx={{ 
-            display: 'grid', 
-            gridTemplateRows: 'auto 1fr', 
-            height: '100vh', 
+          sx={{
+            display: 'grid',
+            gridTemplateRows: 'auto 1fr',
+            height: '100vh',
             width: '100vw',
             overflow: 'hidden',
             position: 'fixed',

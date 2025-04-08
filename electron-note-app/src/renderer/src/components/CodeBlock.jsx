@@ -1,3 +1,8 @@
+/*
+This code file is necessary for handling the UI side of code execution.
+It renders code blocks and handles execution from the render process.
+It is necessary for FR7 and FR9 and FR10 which dicuss rendering and code execution
+*/
 import React, { useState, useEffect, useRef } from 'react'
 import { Box, Typography, IconButton, CircularProgress, Tooltip, Chip } from '@mui/material'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
@@ -65,10 +70,10 @@ const CodeBlock = ({ code, language, index, noteId }) => {
   }, [code, blockId])
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const handleRunCode = async () => {
     setIsExecuting(true)
@@ -329,7 +334,7 @@ const CodeBlock = ({ code, language, index, noteId }) => {
           borderBottom: '1px solid #3a3f4b',
           backgroundColor: '#21252b',
           borderTopLeftRadius: 8,
-          borderTopRightRadius: 8,
+          borderTopRightRadius: 8
         }}
       >
         {/* Left side with language and env status */}
@@ -348,22 +353,21 @@ const CodeBlock = ({ code, language, index, noteId }) => {
               }}
             />
           )}
-          
+
           {/* Python Venv Status - Right of language */}
           {language && language.toLowerCase() === 'python' && venvStatus.checked && (
             <Chip
-              icon={venvStatus.available ? 
-                <CheckIcon sx={{ fontSize: '0.9rem', color: '#98c379' }} /> : 
-                null
+              icon={
+                venvStatus.available ? (
+                  <CheckIcon sx={{ fontSize: '0.9rem', color: '#98c379' }} />
+                ) : null
               }
-              label={venvStatus.available
-                ? 'Virtual Environment'
-                : 'System Python'}
+              label={venvStatus.available ? 'Virtual Environment' : 'System Python'}
               size="small"
               sx={{
-                backgroundColor: venvStatus.available ? 
-                  'rgba(152, 195, 121, 0.1)' : 
-                  'rgba(209, 154, 102, 0.1)',
+                backgroundColor: venvStatus.available
+                  ? 'rgba(152, 195, 121, 0.1)'
+                  : 'rgba(209, 154, 102, 0.1)',
                 color: venvStatus.available ? '#98c379' : '#d19a66',
                 fontWeight: 'medium',
                 fontSize: '0.7rem',
@@ -376,31 +380,28 @@ const CodeBlock = ({ code, language, index, noteId }) => {
         {/* Action Buttons */}
         <Box sx={{ display: 'flex', gap: 1 }}>
           {/* Copy Button */}
-          <Tooltip title={copied ? "Copied!" : "Copy code"}>
-            <IconButton 
-              size="small" 
+          <Tooltip title={copied ? 'Copied!' : 'Copy code'}>
+            <IconButton
+              size="small"
               onClick={handleCopyCode}
               sx={{
                 color: copied ? '#98c379' : '#abb2bf',
-                backgroundColor: copied ? 
-                  'rgba(152, 195, 121, 0.1)' : 
-                  'rgba(171, 178, 191, 0.1)',
+                backgroundColor: copied ? 'rgba(152, 195, 121, 0.1)' : 'rgba(171, 178, 191, 0.1)',
                 '&:hover': {
-                  backgroundColor: copied ? 
-                    'rgba(152, 195, 121, 0.2)' : 
-                    'rgba(171, 178, 191, 0.2)'
+                  backgroundColor: copied ? 'rgba(152, 195, 121, 0.2)' : 'rgba(171, 178, 191, 0.2)'
                 },
                 width: 28,
                 height: 28
               }}
             >
-              {copied ? 
-                <CheckIcon sx={{ fontSize: '0.9rem' }} /> : 
+              {copied ? (
+                <CheckIcon sx={{ fontSize: '0.9rem' }} />
+              ) : (
                 <ContentCopyIcon sx={{ fontSize: '0.9rem' }} />
-              }
+              )}
             </IconButton>
           </Tooltip>
-          
+
           {/* Clear Output Button */}
           {executionResult && (
             <Tooltip title="Clear output">
@@ -421,7 +422,7 @@ const CodeBlock = ({ code, language, index, noteId }) => {
               </IconButton>
             </Tooltip>
           )}
-          
+
           {/* Run Code Button */}
           <Tooltip title={`Run ${language || 'code'}`}>
             <IconButton
@@ -456,7 +457,7 @@ const CodeBlock = ({ code, language, index, noteId }) => {
           '& pre': {
             margin: 0,
             padding: 0,
-            backgroundColor: '#21252b !important',
+            backgroundColor: '#21252b !important'
           },
           '& code': {
             fontFamily: 'inherit !important',
@@ -464,18 +465,18 @@ const CodeBlock = ({ code, language, index, noteId }) => {
             paddingLeft: '12px !important',
             paddingTop: '12px !important',
             paddingBottom: '12px !important',
-            marginLeft: '0 !important',
+            marginLeft: '0 !important'
           },
           '& .code-line': {
             display: 'block !important',
             paddingLeft: '36px !important',
             paddingTop: '4px !important',
             paddingBottom: '4px !important',
-            marginLeft: '0 !important',
+            marginLeft: '0 !important'
           },
           '& .code-line:hover': {
             backgroundColor: 'rgba(97, 175, 239, 0.05)',
-            borderLeft: '3px solid #61afef !important',
+            borderLeft: '3px solid #61afef !important'
           },
           '&::-webkit-scrollbar': {
             height: '8px'
@@ -502,17 +503,18 @@ const CodeBlock = ({ code, language, index, noteId }) => {
             padding: '24px 18px 24px 18px',
             backgroundColor: '#21252b',
             borderRadius: 0,
-            overflowX: 'auto',
+            overflowX: 'auto'
           }}
           codeTagProps={{
             style: {
-              fontFamily: '"JetBrains Mono", "Fira Code", "Source Code Pro", Consolas, Monaco, monospace',
+              fontFamily:
+                '"JetBrains Mono", "Fira Code", "Source Code Pro", Consolas, Monaco, monospace',
               display: 'block',
               paddingLeft: 0
             }
           }}
           lineProps={() => ({
-            style: { 
+            style: {
               display: 'block',
               paddingLeft: 0,
               marginLeft: 0,
@@ -521,7 +523,9 @@ const CodeBlock = ({ code, language, index, noteId }) => {
             className: 'code-line'
           })}
           PreTag={({ children, ...props }) => (
-            <pre {...props} style={{ margin: 0, padding: 0 }}>{children}</pre>
+            <pre {...props} style={{ margin: 0, padding: 0 }}>
+              {children}
+            </pre>
           )}
         >
           {code}
@@ -534,23 +538,23 @@ const CodeBlock = ({ code, language, index, noteId }) => {
           sx={{
             p: 0,
             borderTop: '1px solid #3a3f4b',
-            backgroundColor: '#262a31',
+            backgroundColor: '#262a31'
           }}
         >
           {/* Output Header */}
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
               px: 2.5,
               py: 1.5,
               borderBottom: '1px solid #3a3f4b'
             }}
           >
-            <Typography 
-              variant="subtitle2" 
-              sx={{ 
+            <Typography
+              variant="subtitle2"
+              sx={{
                 color: executionResult.success ? '#98c379' : '#e06c75',
                 fontWeight: 'bold',
                 display: 'inline-flex',
@@ -569,18 +573,15 @@ const CodeBlock = ({ code, language, index, noteId }) => {
             >
               {executionResult.success ? 'Success' : 'Error'}
             </Typography>
-            
+
             {/* Status Chip */}
             <Chip
-              label={executionResult.success ? 
-                "Executed Successfully" : 
-                "Execution Failed"
-              }
+              label={executionResult.success ? 'Executed Successfully' : 'Execution Failed'}
               size="small"
               sx={{
-                backgroundColor: executionResult.success ? 
-                  'rgba(152, 195, 121, 0.1)' : 
-                  'rgba(224, 108, 117, 0.1)',
+                backgroundColor: executionResult.success
+                  ? 'rgba(152, 195, 121, 0.1)'
+                  : 'rgba(224, 108, 117, 0.1)',
                 color: executionResult.success ? '#98c379' : '#e06c75',
                 fontWeight: 'medium',
                 fontSize: '0.7rem',
@@ -588,7 +589,7 @@ const CodeBlock = ({ code, language, index, noteId }) => {
               }}
             />
           </Box>
-          
+
           {/* Output Content */}
           <Box
             sx={{
@@ -600,13 +601,15 @@ const CodeBlock = ({ code, language, index, noteId }) => {
           >
             {/* Error Message */}
             {!executionResult.success && executionResult.error && (
-              <Box sx={{ 
-                p: 2, 
-                mb: 2,
-                backgroundColor: 'rgba(224, 108, 117, 0.05)', 
-                borderRadius: 1,
-                border: '1px solid rgba(224, 108, 117, 0.2)'
-              }}>
+              <Box
+                sx={{
+                  p: 2,
+                  mb: 2,
+                  backgroundColor: 'rgba(224, 108, 117, 0.05)',
+                  borderRadius: 1,
+                  border: '1px solid rgba(224, 108, 117, 0.2)'
+                }}
+              >
                 <Typography sx={{ color: '#e06c75', fontWeight: 'bold', fontSize: '0.9rem' }}>
                   Error: {executionResult.error}
                 </Typography>
@@ -634,17 +637,17 @@ const CodeBlock = ({ code, language, index, noteId }) => {
             {/* Logs Output */}
             {executionResult.logs && executionResult.logs.length > 0 && (
               <Box>
-                <Box 
+                <Box
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
                     mb: 1.5
                   }}
                 >
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: '#61afef', 
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#61afef',
                       fontWeight: 'medium',
                       fontSize: '0.75rem',
                       backgroundColor: 'rgba(97, 175, 239, 0.1)',
@@ -656,7 +659,7 @@ const CodeBlock = ({ code, language, index, noteId }) => {
                     {language === 'python' ? 'Python Output' : 'Console Output'}
                   </Typography>
                 </Box>
-                
+
                 <Box
                   sx={{
                     pl: 2,
@@ -692,7 +695,10 @@ const CodeBlock = ({ code, language, index, noteId }) => {
                         whiteSpace: 'pre',
                         px: 2,
                         py: 0.5,
-                        borderBottom: i < executionResult.logs.length - 1 ? '1px dashed rgba(171, 178, 191, 0.1)' : 'none'
+                        borderBottom:
+                          i < executionResult.logs.length - 1
+                            ? '1px dashed rgba(171, 178, 191, 0.1)'
+                            : 'none'
                       }}
                     >
                       {log.type === 'error' ? '🔴 ' : log.type === 'warn' ? '⚠️ ' : '💬 '}
@@ -706,10 +712,10 @@ const CodeBlock = ({ code, language, index, noteId }) => {
             {/* No Output Message */}
             {executionResult.success &&
               (!executionResult.logs || executionResult.logs.length === 0) && (
-                <Typography 
-                  sx={{ 
-                    color: '#abb2bf', 
-                    fontStyle: 'italic', 
+                <Typography
+                  sx={{
+                    color: '#abb2bf',
+                    fontStyle: 'italic',
                     textAlign: 'center',
                     backgroundColor: 'rgba(152, 195, 121, 0.05)',
                     p: 2,
