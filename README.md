@@ -99,7 +99,20 @@ Run the app in development mode:
 npm run dev
 ```
 
-This should launch the Electron app.
+This should launch the Electron app.\
+If you are running this app on native linux and not wsl or windows you may encounter this issue:\
+FATAL:setuid_sandbox_host.cc(163) The SUID sandbox helper binary was found, but is not configured correctly.\
+
+
+You can fix it by running the following commands inside the `electron-note-app` directory:
+
+```bash
+# Set the file's owner to root
+sudo chown root:root node_modules/electron/dist/chrome-sandbox
+
+# Set the SUID bit so it runs with elevated privileges (required by Chromium)
+sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+```
 
 ---
 
