@@ -7,7 +7,7 @@
 Please try to use Linux for development.\
 For grading please try to use the linux running instructions.\
 Although windows development instructions are given later, it is much easier to setup on linux.
-## **Running Inustructions for Developers (Linux)**
+## **Running Instructions for Developers (Linux)**
 ### **1. Install prerequisites**
 ```bash
 sudo apt update
